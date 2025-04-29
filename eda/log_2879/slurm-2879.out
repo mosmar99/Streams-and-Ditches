@@ -1,6 +1,0 @@
-now processing task id:: 2879 on worker1.slurm.hj.se
-Traceback (most recent call last):
-  File "/home/osma21nr/dl_slu/Streams-and-Ditches/EDA.py", line 4, in <module>
-    import seaborn as sns
-ModuleNotFoundError: No module named 'seaborn'
-finished task with id:: 2879

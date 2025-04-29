@@ -29,19 +29,25 @@
 # you may not place bash commands before the last SBATCH directive
 echo "now processing task id:: ${SLURM_JOB_ID} on ${SLURMD_NODENAME}"
 
+# specify model
+MODEL="m1"
+
 # Create a main log directory if it doesn't exist
-MAIN_LOG_DIR="eda"
+MAIN_LOG_DIR="logs/${MODEL}"
 mkdir -p "$MAIN_LOG_DIR"
 
 # Create a subdirectory for this job's logs
-JOB_LOG_DIR="${MAIN_LOG_DIR}/log_${SLURM_JOB_ID}"
+JOB_LOG_DIR="${MAIN_LOG_DIR}/ID_${SLURM_JOB_ID}"
 mkdir "$JOB_LOG_DIR"
 
 # Move the slurm output file to the job log directory
 mv "slurm-${SLURM_JOB_ID}.out" "$JOB_LOG_DIR/slurm-${SLURM_JOB_ID}.out"
 
+source ~/micromamba/etc/profile.d/micromamba.sh
+micromamba activate dl
+
 # Run your python script and redirect output to a file within the job's log directory
-python EDA.py "$JOB_LOG_DIR" --epochs 50 > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
+python ./src/models/${MODEL}.py "$JOB_LOG_DIR" --epochs 50 > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
 
 echo "finished task with id:: ${SLURM_JOB_ID}"
 # happy end
