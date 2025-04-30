@@ -1,10 +1,9 @@
-import logging
 import os
-
 import cv2
-import numpy as np
-import tifffile
 import torch
+import logging
+import tifffile
+import numpy as np
 import torchvision
 
 class RandomFlip:
