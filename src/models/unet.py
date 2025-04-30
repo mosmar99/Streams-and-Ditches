@@ -1,11 +1,10 @@
-import math
 import os
-
-# import concretedropout.pytorch as cd
+import math
 import torch
 import numpy as np
 from torch import nn
 from tqdm import tqdm
+import concretedropout.pytorch as cd
 
 class IoU:
 
