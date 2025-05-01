@@ -70,11 +70,13 @@ class IoU:
 
         '''
         results = {}
-
         for label in self._results:
             results[label] = np.mean(self._results[label])
 
         return results
+    
+    def labels(self):
+        return self._results.keys()
 
 
 class WeightedMSE(nn.Module):
@@ -133,7 +135,7 @@ class ModelCheckpoint:
         self._model_path = os.path.join(log_path, file_name)
         self._model = model
         self._optimizer = optimizer
-        self._minloss = np.infty
+        self._minloss = np.inf
 
     def update(self, epoch, loss):
         '''Save model if given loss improved
@@ -166,7 +168,7 @@ class CSVLogger:
 
         '''
         self._file = os.path.join(log_path, file_name)
-        self._metric_order = [f for f in metric.value()]
+        self._metric_order = [f for f in metric.labels()]
 
         columns = ['epoch', 'loss']
         columns += [f'iou_{f}' for f in self._metric_order]
@@ -378,7 +380,7 @@ class UNet(BaseUNet):
         # ensure that all tensors are created on the same device
         # torch.set_default_device(device)
         if device == 'cuda':
-            torch.set_default_tensor_type(torch.cuda.FloatTensor)
+            torch.set_default_device("cuda")
         self._classes = classes
         self._device = device
         self._downsampling = nn.ModuleList()
@@ -427,7 +429,7 @@ class UNet(BaseUNet):
 
         '''
         if isinstance(layer, nn.Conv2d):
-            nn.init.kaiming_normal(layer.weight)
+            nn.init.kaiming_normal_(layer.weight)
             nn.init.zeros_(layer.bias)
         elif isinstance(layer, nn.ConvTranspose2d):
             nn.init.zeros_(layer.bias)
@@ -489,20 +491,22 @@ class UNet(BaseUNet):
         #                                       .to(self._device))
         optimizer = torch.optim.Adam(self.parameters())
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
+
         metric = IoU(self._classes, True)
         checkpoint = ModelCheckpoint(log_dir, self, optimizer)
         csv_log = CSVLogger(log_dir, metric)
 
-        for epoch in tqdm(range(epochs)):
+        for epoch in range(epochs):
 
             train_loss, train_iou = self._train(train_it, criterion,
                                                 optimizer, metric)
+
             scheduler.step(train_loss)
 
             valid_loss, valid_iou = self._validate(valid_it, criterion, metric)
             checkpoint.update(epoch, valid_loss)
             csv_log.update(epoch, train_loss, train_iou, valid_loss, valid_iou,
-                           optimizer.param_groups[0]['lr'])
+                        optimizer.param_groups[0]['lr'])
 
     def proba(self, batch):
         '''Predict class probabilities for given batch
@@ -622,7 +626,7 @@ class UNet(BaseUNet):
         epoch_loss = 0.0
         metric.reset()
 
-        for batch in train_it:
+        for batch in tqdm(train_it):
             inputs = batch['inputs'].to(self._device,
                                         dtype=batch['inputs'].dtype)
             target = batch['target'].to(self._device,
@@ -635,6 +639,7 @@ class UNet(BaseUNet):
             for module in filter(lambda x: isinstance(x, cd.ConcreteDropout2D),
                                  self.modules()):
                 reg += module.regularization
+
             loss = criterion(outputs, target) + reg
 
             optimizer.zero_grad()
@@ -642,9 +647,8 @@ class UNet(BaseUNet):
             optimizer.step()
 
             epoch_loss += loss.item()
-
             metric.add(outputs.detach(), target.detach())
-
+        
         return epoch_loss/len(train_it), metric.value()
 
     def _validate(self, valid_it, criterion, metric):
