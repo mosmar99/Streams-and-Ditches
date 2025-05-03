@@ -1,6 +1,7 @@
 import os
 import torch
 import logging
+import warnings
 import numpy as np
 from src.models.unet import UNet
 from torchvision import transforms
@@ -29,7 +30,7 @@ def main(log_dir, epochs):
     seed = 42
     batch_size = 4
     in_channels = 1
-    classes = [0, 1, 2]
+    classes = "0,1,2"
     device = 'cuda'
 
     enable_logging(log_dir, 'train.log')
@@ -89,7 +90,7 @@ def main(log_dir, epochs):
                                                     .manual_seed(seed))
 
 
-    model = UNet(in_channels, classes, device=device)
+    model = UNet(in_channels, dh.MultibandDataset.parse_classes(classes))
 
     logging.info('Start training')
     model.fit(train_it, val_it, epochs, log_dir,
