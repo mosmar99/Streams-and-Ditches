@@ -46,7 +46,7 @@ source ~/micromamba/etc/profile.d/micromamba.sh
 micromamba activate dl
 
 # Run your python script and redirect output to a file within the job's log directory
-python main.py "$JOB_LOG_DIR" --epochs 5 > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
+python cp.py "$JOB_LOG_DIR" --epochs 5 > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
 
 echo "finished task with id:: ${SLURM_JOB_ID}"
 # happy end
