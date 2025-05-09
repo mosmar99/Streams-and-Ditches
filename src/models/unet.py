@@ -108,7 +108,9 @@ class WeightedMSE(nn.Module):
 
         '''
         if self._weights is not None:
+            print("(inputs - targets) ** 2).shape:", ((inputs - targets) ** 2).shape)
             mse = ((inputs - targets) ** 2).mean(dim=(0, 2, 3))
+            print("MSE Shape:", mse.shape)
             mse = (self._weights * mse).sum()
         else:
             mse = ((inputs - targets) ** 2).mean()

@@ -46,8 +46,19 @@ source ~/micromamba/etc/profile.d/micromamba.sh
 micromamba activate dl
 
 # Run your python script and redirect output to a file within the job's log directory
+START=$(date +%s)
 python cp.py "$JOB_LOG_DIR" --epochs 5 > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
+END=$(date +%s)
+RUNTIME=$((END - START))
 
 echo "finished task with id:: ${SLURM_JOB_ID}"
+
+# Calculate and log Days, Hours, Minutes and Seconds from runtime
+DAYS=$((RUNTIME / 86400))
+HOURS=$(( (RUNTIME % 86400) / 3600 ))
+MINUTES=$(( (RUNTIME % 3600) / 60 ))
+SECONDS=$((RUNTIME % 60))
+echo "Total excecution time: ${DAYS}d ${HOURS}h ${MINUTES}m ${SECONDS}s."
+
 # happy end
 exit 0
