@@ -16,9 +16,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 NUM_CLASSES = 3
 
 # HPTs
-num_epochs = 20
-batch_size = 15
+num_epochs = 100
+batch_size = 8
 learning_rate = 0.001
+
+print(f"num_epochs: {num_epochs}, batch_size: {batch_size}, learning_rate: {learning_rate}")
 
 def double_conv(in_c, out_c):
     conv = nn.Sequential(
@@ -75,7 +77,7 @@ class UNet(nn.Module):
         self.down_conv3 = double_conv(64, 128)
         self.down_conv4 = double_conv(128, 256)
         self.down_conv5 = double_conv(256, 512)
-        # self.down_conv5 = double_conv(512, 1024)
+        # self.down_conv6 = double_conv(512, 1024)
 
         # self.up_trans_0 = nn.ConvTranspose2d(
         #     in_channels=1024,
@@ -130,9 +132,14 @@ class UNet(nn.Module):
         x7 = self.down_conv4(x6)
         x8 = self.max_pool_2x2(x7)
         x9 = self.down_conv5(x8)
+        # x10 = self.max_pool_2x2(x9)
+        # x11 = self.down_conv6(x10)
 
+        # # decoder
+        # x = self.up_trans_0(x11)
+        # y = crop_img(x9, x)
+        # x = self.up_conv_0(torch.cat([x, y], dim=1))
 
-        # decoder
         x = self.up_trans_1(x9)
         y = crop_img(x7, x)
         x = self.up_conv_1(torch.cat([x, y], dim=1))
