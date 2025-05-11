@@ -9,7 +9,7 @@
 # force-stopped by the server. If you make the expected time too long, it will
 # take longer for the job to start. Here, we say the job will take 20 minutes
 #                d-hh:mm:ss
-#SBATCH --time=0-3:30:00
+#SBATCH --time=1-11:35:00
 # Define resources to use for the defined job. Resources, which are not defined
 # will not be provided.
 
@@ -18,7 +18,7 @@
 # Select number of required GPUs (maximum 1)
 #SBATCH --gres=gpu:1
 # Select number of required CPUs per task (maximum 16)
-#SBATCH --cpus-per-task 4
+#SBATCH --cpus-per-task 16
 # Select the partition - use the priority partition if you are in the user group slurmPrio
 # If you are not in that group, your jobs won't get scheduled - so remove the entry below or change the partition name to 'scavenger'
 # Note that your jobs may be interrupted and restarted when run on the scavenger partition
@@ -29,9 +29,8 @@
 # you may not place bash commands before the last SBATCH directive
 echo "now processing task id:: ${SLURM_JOB_ID} on ${SLURMD_NODENAME}"
 
-
 # Create a main log directory if it doesn't exist
-MODEL="m1"
+MODEL="learning"
 MAIN_LOG_DIR="logs/${MODEL}"
 mkdir -p "$MAIN_LOG_DIR"
 
@@ -46,7 +45,7 @@ source ~/micromamba/etc/profile.d/micromamba.sh
 micromamba activate dl
 
 # Run your python script and redirect output to a file within the job's log directory
-python cp.py "$JOB_LOG_DIR" --epochs 5 > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
+python maso/unet.py "$JOB_LOG_DIR" --epochs 5 > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
 
 echo "finished task with id:: ${SLURM_JOB_ID}"
 # happy end
