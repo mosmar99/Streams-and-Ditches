@@ -16,8 +16,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 NUM_CLASSES = 3
 
 # HPTs
-num_epochs = 100
-batch_size = 8
+num_epochs = 20
+batch_size = 15
 learning_rate = 0.001
 
 def double_conv(in_c, out_c):
@@ -75,6 +75,14 @@ class UNet(nn.Module):
         self.down_conv3 = double_conv(64, 128)
         self.down_conv4 = double_conv(128, 256)
         self.down_conv5 = double_conv(256, 512)
+        # self.down_conv5 = double_conv(512, 1024)
+
+        # self.up_trans_0 = nn.ConvTranspose2d(
+        #     in_channels=1024,
+        #     out_channels=512,
+        #     kernel_size=2,
+        #     stride=2)
+        # self.up_conv_0 = double_conv(1024, 512)
 
         self.up_trans_1 = nn.ConvTranspose2d(
             in_channels=512,
@@ -191,53 +199,9 @@ def calculate_iou(outputs, labels, num_classes):
 
     return intersection_counts, union_counts
 
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
-        super(FocalLoss, self).__init__()
-        self.gamma = gamma
-        self.reduction = reduction
-        self.alpha = alpha  # weight parameter for each class
-        
-    def forward(self, inputs, targets):
-        # Convert targets to one-hot encoding
-        ce_loss = nn.functional.cross_entropy(inputs, targets, 
-                                             weight=self.alpha, 
-                                             reduction='none')
-        
-        # Get probabilities
-        pt = torch.exp(-ce_loss)
-        
-        # Apply focal weighting
-        focal_weight = (1 - pt) ** self.gamma
-        focal_loss = focal_weight * ce_loss
-
-        if self.reduction == 'mean':
-            return focal_loss.mean()
-        elif self.reduction == 'sum':
-            return focal_loss.sum()
-        else:  # 'none'
-            return focal_loss
-
-def compute_class_weights(loader):
-    """Compute class weights based on frequency in the dataset"""
-    class_counts = torch.zeros(NUM_CLASSES)
-    for _, labels in loader:
-        labels, _ = add_padding(labels)
-        for cls in range(NUM_CLASSES):
-            class_counts[cls] += torch.sum(labels == cls).item()
-    
-    # Normalize counts to get frequencies
-    if torch.sum(class_counts) > 0:
-        class_frequencies = class_counts / torch.sum(class_counts)
-        # Compute class weights (inverse frequency, then normalize)
-        weights = 1.0 / (class_frequencies + 1e-5)  # Add small epsilon to avoid division by zero
-        weights = weights / torch.sum(weights) * NUM_CLASSES  # Normalize
-    else:
-        weights = torch.ones(NUM_CLASSES)
-    
-    return weights
-
 if __name__ == "__main__":
+    begin_time = time.time()
+
     def read_file_list(file_path):
         with open(file_path, 'r') as f:
             return [line.strip() for line in f.readlines()]
@@ -265,18 +229,11 @@ if __name__ == "__main__":
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=15, pin_memory=True)
     print(f"Created DataLoaders with batch size {batch_size}")
 
-    # Compute class weights
-    print("Computing class weights based on frequency in training data...")
-    class_weights = compute_class_weights(train_loader)
-    print(f"Class weights: {class_weights}")
-
     # Create a UNet model
     model = UNet().to(device)
 
     # Loss and optimizer
-    gamma = 2.0
-    # criterion = nn.CrossEntropyLoss()
-    criterion = FocalLoss(alpha=class_weights.to(device), gamma=gamma)
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     # Training Loop
@@ -339,6 +296,9 @@ if __name__ == "__main__":
         end_time = time.time()
         print(f" -- Validation Loss: {val_loss:.4f}, Average Validation IoU per class: {avg_class_iou}", flush=True)
         print(f" -- Time: {end_time - start_time:.2f} seconds\n", flush=True)
+
+    final_time = time.time()
+    print(f"Training completed in {(final_time - begin_time) / 60:.2f} minutes", flush=True)
 
     # Save the model checkpoint
     torch.save(model.state_dict(), 'unet_model.pth')
