@@ -8,6 +8,13 @@ import os
 from torch.utils.data import Dataset, DataLoader
 import time
 import numpy as np
+import argparse
+
+# argparse
+parser = argparse.ArgumentParser(description='UNet Training')
+parser.add_argument('--logdir', type=str, default='logs', help='Directory to save logs')
+args = parser.parse_args()
+logdir = args.logdir
 
 # device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -144,7 +151,7 @@ class UNet(nn.Module):
         y = crop_img(x7, x)
         x = self.up_conv_1(torch.cat([x, y], dim=1))
 
-        x = self.up_trans_2(x)
+        x = self.up_trans_2(x7)
         y = crop_img(x5, x)
         x = self.up_conv_2(torch.cat([x, y], dim=1))
 
@@ -240,7 +247,8 @@ if __name__ == "__main__":
     model = UNet().to(device)
 
     # Loss and optimizer
-    criterion = nn.CrossEntropyLoss()
+    weights = torch.tensor([1.0, 5.0, 20.0])
+    criterion = nn.CrossEntropyLoss(weight=weights.to(device))
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     # Training Loop
@@ -296,10 +304,20 @@ if __name__ == "__main__":
 
         val_loss /= len(val_dataset)
         avg_class_iou = []
+        avg_class_recall = []
         for cls in range(NUM_CLASSES):
             iou = total_intersections[cls] / total_unions[cls] if total_unions[cls] > 0 else 0.0
             avg_class_iou.append(iou)
-        
+
+            total_ground_truth = torch.sum(labels == cls).item()
+            print(f"Class {cls}: Total Ground Truth = {total_ground_truth}")
+            recall = total_intersections[cls] / total_ground_truth if total_ground_truth > 0 else 0.0
+            avg_class_recall.append(recall)
+
+        with open(f'{logdir}/training.log', 'a') as log_file:
+            if epoch == 0:
+                log_file.write('epoch,val_loss,iou_class0,iou_class1,iou_class2,recall_class0,recall_class1,recall_class2\n')
+            log_file.write(f"{epoch+1},{val_loss:.4f},{','.join([f'{iou:.4f}' for iou in avg_class_iou])},{','.join([f'{recall:.4f}' for recall in avg_class_recall])}\n")
         end_time = time.time()
         print(f" -- Validation Loss: {val_loss:.4f}, Average Validation IoU per class: {avg_class_iou}", flush=True)
         print(f" -- Time: {end_time - start_time:.2f} seconds\n", flush=True)
