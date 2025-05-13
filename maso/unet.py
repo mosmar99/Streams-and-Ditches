@@ -318,7 +318,9 @@ if __name__ == "__main__":
                 log_file.write('epoch,val_loss,iou_class0,iou_class1,iou_class2,recall_class0,recall_class1,recall_class2\n')
             log_file.write(f"{epoch+1},{val_loss:.4f},{','.join([f'{iou:.4f}' for iou in avg_class_iou])},{','.join([f'{recall:.4f}' for recall in avg_class_recall])}\n")
         end_time = time.time()
-        print(f" -- Validation Loss: {val_loss:.4f}, Average Validation IoU per class: {avg_class_iou}, Average Validation Recall per class: {avg_class_recall}", flush=True)
+        print(f" -- Validation Loss: {val_loss:.4f}", flush=True)
+        print(f" -- Average Validation IoU per class:    {avg_class_iou}", flush=True)
+        print(f" -- Average Validation Recall per class: {avg_class_recall}", flush=True)
         print(f" -- Time: {end_time - start_time:.2f} seconds\n", flush=True)
 
     final_time = time.time()
