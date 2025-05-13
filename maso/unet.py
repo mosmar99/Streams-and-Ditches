@@ -287,7 +287,7 @@ if __name__ == "__main__":
 
     model = UNet().to(device)
 
-    weights = torch.tensor([1.0, 5.0, 20.0])
+    weights = torch.tensor([1.0, 10.0, 100.0])
     criterion = nn.CrossEntropyLoss(weight=weights.to(device))
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
