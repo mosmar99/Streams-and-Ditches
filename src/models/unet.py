@@ -19,12 +19,16 @@ class IoU:
         regression : Compute metric for regression problem
         '''
         self._regression = regression
+        self._intersections = {f: [] for f in classes}
+        self._unions = {f: [] for f in classes}
         self._results = {f: [] for f in classes}
 
     def reset(self):
         '''Reset internal datastructure
         '''
         for key in self._results:
+            self._intersections[key] = []
+            self._unions[key] = []
             self._results[key] = []
 
     def add(self, predicted, target):
@@ -60,7 +64,8 @@ class IoU:
             union = np.logical_or(pred_label, target_label).sum()
 
             if union > 0:
-                self._results[label].append(intersect/union)
+                self._intersections[label].append(intersect)
+                self._unions[label].append(union)
 
     def value(self):
         '''Compute class-wise IoU
@@ -71,7 +76,7 @@ class IoU:
         '''
         results = {}
         for label in self._results:
-            results[label] = np.mean(self._results[label])
+            results[label] = np.sum(self._intersections[label]) / np.sum(self._unions[label])
 
         return results
     
