@@ -213,6 +213,32 @@ def calculate_iou(outputs, labels, num_classes):
 
     return intersection_counts, union_counts
 
+def calculate_recall(outputs_logits, labels, num_classes):
+    # Upsample logits to match label size BEFORE argmax
+    upsampled_logits = F.interpolate(outputs_logits,
+                                     size=labels.shape[-2:], # Target H, W
+                                     mode='bilinear',
+                                     align_corners=False)
+    preds = torch.argmax(upsampled_logits, dim=1)
+
+    preds = preds.view(-1)
+    labels = labels.view(-1)
+
+    true_positives_counts = []
+    actual_positives_counts = []
+    for cls in range(num_classes):
+        pred_mask = (preds == cls)
+        label_mask = (labels == cls)
+
+        true_positives = torch.logical_and(pred_mask, label_mask).sum().float()
+        total_ground_truth = label_mask.sum().float()
+
+        true_positives_counts.append(true_positives.item())
+        # Avoid division by zero if no ground truth positives exist for the class
+        actual_positives_counts.append(total_ground_truth.item() if total_ground_truth.item() > 0 else 1e-6) # Add epsilon
+
+    return true_positives_counts, actual_positives_counts
+
 if __name__ == "__main__":
     begin_time = time.time()
 
@@ -284,8 +310,8 @@ if __name__ == "__main__":
         # Validation Loop
         model.eval()
         val_loss = 0.0
-        total_intersections = [0] * NUM_CLASSES
-        total_unions = [0] * NUM_CLASSES
+        total_true_positives = [0] * NUM_CLASSES
+        total_actual_positives = [0] * NUM_CLASSES
         with torch.no_grad():
             for images, labels in val_loader:
                 images, padding = add_padding(images)
@@ -297,10 +323,10 @@ if __name__ == "__main__":
                 loss = criterion(outputs, labels.squeeze(1).long())
                 val_loss += loss.item() * images.size(0)
 
-                batch_intersections, batch_unions = calculate_iou(outputs, labels.squeeze(1), NUM_CLASSES)
+                batch_true_positives, batch_actual_positives = calculate_recall(logits, labels, NUM_CLASSES)
                 for cls in range(NUM_CLASSES):
-                    total_intersections[cls] += batch_intersections[cls]
-                    total_unions[cls] += batch_unions[cls]
+                    total_true_positives[cls] += batch_true_positives[cls]
+                    total_actual_positives[cls] += batch_actual_positives[cls]
 
         val_loss /= len(val_dataset)
         avg_class_iou = []
@@ -309,9 +335,7 @@ if __name__ == "__main__":
             iou = total_intersections[cls] / total_unions[cls] if total_unions[cls] > 0 else 0.0
             avg_class_iou.append(iou)
 
-            total_ground_truth = torch.sum(labels == cls).item()
-            print(f"Class {cls}: Total Ground Truth = {total_ground_truth}")
-            recall = total_intersections[cls] / total_ground_truth if total_ground_truth > 0 else 0.0
+            recall = total_true_positives[cls] / (total_actual_positives[cls] + 1e-6)
             avg_class_recall.append(recall)
 
         with open(f'{logdir}/training.log', 'a') as log_file:

@@ -42,7 +42,7 @@ mkdir "$JOB_LOG_DIR"
 mv "slurm-${SLURM_JOB_ID}.out" "$JOB_LOG_DIR/slurm-${SLURM_JOB_ID}.out"
 
 source ~/micromamba/etc/profile.d/micromamba.sh
-micromamba activate dl
+micromamba activate slu
 
 # Run your python script and redirect output to a file within the job's log directory
 python maso/unet.py --logdir "$JOB_LOG_DIR" > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
