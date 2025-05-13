@@ -25,7 +25,7 @@ learning_rate = 0.001
 
 print(f"num_epochs: {num_epochs}, batch_size: {batch_size}, learning_rate: {learning_rate}")
 
-def double_conv(in_c, out_c, dropout_prob=0.1): 
+def double_conv(in_c, out_c, dropout_prob=0.1):
     conv = nn.Sequential(
         nn.Conv2d(in_c, out_c, kernel_size=3, padding='same', bias=False),
         nn.BatchNorm2d(out_c),
@@ -33,13 +33,13 @@ def double_conv(in_c, out_c, dropout_prob=0.1):
         nn.Conv2d(out_c, out_c, kernel_size=3, padding='same', bias=False),
         nn.BatchNorm2d(out_c),
         nn.ReLU(inplace=True),
-        nn.Dropout(p=dropout_prob) 
+        nn.Dropout(p=dropout_prob)
     )
     return conv
 
 def crop_img(og_tensor, target_tensor):
     target_size = target_tensor.size()[2]
-    tensor_size  = og_tensor.size()[2]
+    tensor_size = og_tensor.size()[2]
     diff_size = tensor_size - target_size
     delta = diff_size // 2
     if diff_size % 2 == 0:
@@ -142,7 +142,7 @@ class UNet(nn.Module):
         y = crop_img(x7, x)
         x = self.up_conv_1(torch.cat([x, y], dim=1))
 
-        x = self.up_trans_2(x) # Corrected: input from previous upsampling block
+        x = self.up_trans_2(x)
         y = crop_img(x5, x)
         x = self.up_conv_2(torch.cat([x, y], dim=1))
 
@@ -222,7 +222,7 @@ def calculate_recall(outputs_logits, labels, num_classes):
 def calculate_f1_components(outputs_logits, labels, num_classes):
     preds = torch.argmax(outputs_logits, dim=1).view(-1)
     labels = labels.view(-1)
-    
+
     batch_tp = []
     batch_fp = []
     batch_fn = []
@@ -230,21 +230,21 @@ def calculate_f1_components(outputs_logits, labels, num_classes):
     for cls in range(num_classes):
         pred_mask_cls = (preds == cls)
         label_mask_cls = (labels == cls)
-        
+
         tp = torch.logical_and(pred_mask_cls, label_mask_cls).sum().item()
         fp = torch.logical_and(pred_mask_cls, ~label_mask_cls).sum().item()
         fn = torch.logical_and(~pred_mask_cls, label_mask_cls).sum().item()
-        
+
         batch_tp.append(tp)
         batch_fp.append(fp)
         batch_fn.append(fn)
-        
+
     return batch_tp, batch_fp, batch_fn
 
 def calculate_mcc_components(outputs_logits, labels, num_classes):
     preds = torch.argmax(outputs_logits, dim=1).view(-1)
     labels_flat = labels.view(-1)
-    
+
     batch_tp = []
     batch_tn = []
     batch_fp = []
@@ -253,21 +253,45 @@ def calculate_mcc_components(outputs_logits, labels, num_classes):
     for cls in range(num_classes):
         pred_is_cls = (preds == cls)
         label_is_cls = (labels_flat == cls)
-        
+
         pred_is_not_cls = ~pred_is_cls
         label_is_not_cls = ~label_is_cls
-        
+
         tp = torch.logical_and(pred_is_cls, label_is_cls).sum().item()
         tn = torch.logical_and(pred_is_not_cls, label_is_not_cls).sum().item()
         fp = torch.logical_and(pred_is_cls, label_is_not_cls).sum().item()
         fn = torch.logical_and(pred_is_not_cls, label_is_cls).sum().item()
-        
+
         batch_tp.append(tp)
         batch_tn.append(tn)
         batch_fp.append(fp)
         batch_fn.append(fn)
-        
+
     return batch_tp, batch_tn, batch_fp, batch_fn
+
+class GeneralizedDiceLoss(nn.Module):
+    def __init__(self, smooth=1e-6):
+        super(GeneralizedDiceLoss, self).__init__()
+        self.smooth = smooth
+
+    def forward(self, outputs, targets):
+        outputs = torch.softmax(outputs, dim=1) # Apply softmax to get probabilities
+        targets_one_hot = torch.eye(outputs.size(1)).to(outputs.device)[targets.long()]
+        targets_one_hot = targets_one_hot.permute(0, 3, 1, 2) # Reshape to (B, C, H, W)
+
+        intersection = torch.sum(outputs * targets_one_hot, dim=(2, 3))
+        sum_sq_outputs = torch.sum(outputs ** 2, dim=(2, 3))
+        sum_sq_targets = torch.sum(targets_one_hot ** 2, dim=(2, 3))
+
+        # Calculate weights based on target volume
+        class_weights = 1.0 / (torch.sum(targets_one_hot, dim=(2, 3))**2 + self.smooth)
+        class_weights = class_weights / torch.sum(class_weights, dim=1, keepdim=True) # Normalize weights
+
+        numerator = torch.sum(class_weights * intersection, dim=1)
+        denominator = torch.sum(class_weights * (sum_sq_outputs + sum_sq_targets), dim=1)
+
+        dice_score = 2.0 * (numerator + self.smooth) / (denominator + self.smooth)
+        return 1.0 - torch.mean(dice_score)
 
 
 if __name__ == "__main__":
@@ -300,9 +324,8 @@ if __name__ == "__main__":
 
     model = UNet().to(device)
 
-    weights = torch.tensor([1.0, 10.0, 100.0])
-    criterion = nn.CrossEntropyLoss(weight=weights.to(device))
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    criterion = GeneralizedDiceLoss()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.01)
 
     total_steps = len(train_loader)
     for epoch in range(num_epochs):
@@ -336,7 +359,7 @@ if __name__ == "__main__":
         total_unions = [0] * NUM_CLASSES
         total_true_positives_recall = [0] * NUM_CLASSES
         total_actual_positives_in_label = [0] * NUM_CLASSES
-        
+
         total_tp_f1 = [0] * NUM_CLASSES
         total_fp_f1 = [0] * NUM_CLASSES
         total_fn_f1 = [0] * NUM_CLASSES
@@ -371,7 +394,7 @@ if __name__ == "__main__":
                 for cls in range(NUM_CLASSES):
                     total_true_positives_recall[cls] += batch_tp_recall[cls]
                     total_actual_positives_in_label[cls] += batch_ap_recall[cls]
-                
+
                 # F1 components
                 batch_tp_f1_val, batch_fp_f1_val, batch_fn_f1_val = calculate_f1_components(outputs, squeezed_labels_padded, NUM_CLASSES)
                 for cls in range(NUM_CLASSES):
@@ -402,7 +425,7 @@ if __name__ == "__main__":
             # recall
             recall_val = total_true_positives_recall[cls] / total_actual_positives_in_label[cls] if total_actual_positives_in_label[cls] > 0 else 0.0
             avg_class_recall.append(recall_val)
-            
+
             # F1-score
             tp_f1, fp_f1, fn_f1 = total_tp_f1[cls], total_fp_f1[cls], total_fn_f1[cls]
             precision_f1 = tp_f1 / (tp_f1 + fp_f1) if (tp_f1 + fp_f1) > 0 else 0.0
@@ -420,11 +443,11 @@ if __name__ == "__main__":
 
         if not os.path.exists(logdir):
             os.makedirs(logdir)
-            
+
         log_header = 'epoch,val_loss'
         log_values = f"{epoch + 1},{val_loss:.4f}"
 
-        # Collect metrics for each class and format them 
+        # Collect metrics for each class and format them
         recalls = [f'{avg_class_recall[i]:.4f}' for i in range(NUM_CLASSES)]
         f1_scores = [f'{avg_class_f1[i]:.4f}' for i in range(NUM_CLASSES)]
         mccs = [f'{avg_class_mcc[i]:.4f}' for i in range(NUM_CLASSES)]
@@ -445,12 +468,12 @@ if __name__ == "__main__":
         # Add iou columns
         log_header += ''.join([f',iou_class{i}' for i in range(NUM_CLASSES)])
         log_values += ''.join([f',{ious[i]}' for i in range(NUM_CLASSES)])
-                
+
         with open(f'{logdir}/training.log', 'a') as log_file:
             if epoch == 0:
                 log_file.write(log_header + '\n')
             log_file.write(log_values + '\n')
-            
+
         end_time = time.time()
         print(f" -- Validation Loss: {val_loss:.4f}", flush=True)
         print(f" -- Average Validation IoU per class:     {avg_class_iou}", flush=True)
