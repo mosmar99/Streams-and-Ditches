@@ -489,3 +489,134 @@ if __name__ == "__main__":
 
     torch.save(model.state_dict(), 'unet_model.pth')
     print("Model saved as unet_model.pth")
+
+ # --------------- START OF TEST SECTION ---------------
+    print("\nStarting testing phase with the best saved model...")
+
+    best_model_path = os.path.join(logdir, 'unet_model_ckpt.pth')
+    if os.path.exists(best_model_path):
+        print(f"Loading best model from: {best_model_path}")
+        test_model = UNet().to(device)
+        test_model.load_state_dict(torch.load(best_model_path, map_location=device))
+        test_model.eval()
+
+        test_loss = 0.0
+        test_total_intersections = [0] * NUM_CLASSES
+        test_total_unions = [0] * NUM_CLASSES
+        test_total_true_positives_recall = [0] * NUM_CLASSES
+        test_total_actual_positives_in_label = [0] * NUM_CLASSES
+        test_total_tp_f1 = [0] * NUM_CLASSES
+        test_total_fp_f1 = [0] * NUM_CLASSES
+        test_total_fn_f1 = [0] * NUM_CLASSES
+        test_total_tp_mcc = [0] * NUM_CLASSES
+        test_total_tn_mcc = [0] * NUM_CLASSES
+        test_total_fp_mcc = [0] * NUM_CLASSES
+        test_total_fn_mcc = [0] * NUM_CLASSES
+
+        with torch.no_grad():
+            for i, (images, labels) in enumerate(test_loader):
+                images, padding = add_padding(images)
+                labels_padded, _ = add_padding(labels)
+                images = images.to(device)
+                squeezed_labels_padded = labels_padded.squeeze(1).long().to(device)
+
+                outputs = test_model(images)
+                loss = criterion(outputs, squeezed_labels_padded)
+                test_loss += loss.item() * images.size(0)
+
+                if (i + 1) % 10 == 0 or (i+1) == len(test_loader):
+                    print(f"  Processed test batch [{i+1}/{len(test_loader)}]", flush=True)
+
+                # IoU statistics
+                batch_intersections, batch_unions = calculate_iou(outputs, squeezed_labels_padded, NUM_CLASSES)
+                for cls in range(NUM_CLASSES):
+                    test_total_intersections[cls] += batch_intersections[cls]
+                    test_total_unions[cls] += batch_unions[cls]
+
+                # Recall statistics
+                batch_tp_recall, batch_ap_recall = calculate_recall(outputs, squeezed_labels_padded, NUM_CLASSES)
+                for cls in range(NUM_CLASSES):
+                    test_total_true_positives_recall[cls] += batch_tp_recall[cls]
+                    test_total_actual_positives_in_label[cls] += batch_ap_recall[cls]
+
+                # F1 components
+                batch_tp_f1_test, batch_fp_f1_test, batch_fn_f1_test = calculate_f1_components(outputs, squeezed_labels_padded, NUM_CLASSES)
+                for cls in range(NUM_CLASSES):
+                    test_total_tp_f1[cls] += batch_tp_f1_test[cls]
+                    test_total_fp_f1[cls] += batch_fp_f1_test[cls]
+                    test_total_fn_f1[cls] += batch_fn_f1_test[cls]
+
+                # MCC components
+                batch_tp_mcc_test, batch_tn_mcc_test, batch_fp_mcc_test, batch_fn_mcc_test = calculate_mcc_components(outputs, squeezed_labels_padded, NUM_CLASSES)
+                for cls in range(NUM_CLASSES):
+                    test_total_tp_mcc[cls] += batch_tp_mcc_test[cls]
+                    test_total_tn_mcc[cls] += batch_tn_mcc_test[cls]
+                    test_total_fp_mcc[cls] += batch_fp_mcc_test[cls]
+                    test_total_fn_mcc[cls] += batch_fn_mcc_test[cls]
+        
+        test_loss /= len(test_dataset)
+        test_avg_class_iou = []
+        test_avg_class_recall = []
+        test_avg_class_f1 = []
+        test_avg_class_mcc = []
+
+        print("\n--- Test Results ---")
+        print(f"Test Loss: {test_loss:.4f}")
+
+        for cls in range(NUM_CLASSES):
+            # iou
+            iou = test_total_intersections[cls] / test_total_unions[cls] if test_total_unions[cls] > 0 else 0.0
+            test_avg_class_iou.append(iou)
+
+            # recall
+            recall_test = test_total_true_positives_recall[cls] / test_total_actual_positives_in_label[cls] if test_total_actual_positives_in_label[cls] > 0 else 0.0
+            test_avg_class_recall.append(recall_test)
+
+            # F1-score
+            tp_f1, fp_f1, fn_f1 = test_total_tp_f1[cls], test_total_fp_f1[cls], test_total_fn_f1[cls]
+            precision_f1 = tp_f1 / (tp_f1 + fp_f1) if (tp_f1 + fp_f1) > 0 else 0.0
+            recall_f1 = tp_f1 / (tp_f1 + fn_f1) if (tp_f1 + fn_f1) > 0 else 0.0
+            f1_score = 2 * (precision_f1 * recall_f1) / (precision_f1 + recall_f1) if (precision_f1 + recall_f1) > 0 else 0.0
+            test_avg_class_f1.append(f1_score)
+
+            # MCC calculation
+            tp, tn, fp, fn = test_total_tp_mcc[cls], test_total_tn_mcc[cls], test_total_fp_mcc[cls], test_total_fn_mcc[cls]
+            numerator = (tp * tn) - (fp * fn)
+            denominator_val = (tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)
+            mcc = 0.0 if denominator_val == 0 else numerator / math.sqrt(denominator_val) if denominator_val > 0 else 0.0
+            test_avg_class_mcc.append(mcc)
+        
+        metric_names_test = ["IoU", "Recall", "F1-Score", "MCC"]
+        all_metrics_test = [test_avg_class_iou, test_avg_class_recall, test_avg_class_f1, test_avg_class_mcc]
+
+        header_test = "Class | " + " | ".join(metric_names_test)
+        print(header_test)
+        print("-" * len(header_test))
+        for cls_idx in range(NUM_CLASSES):
+            metrics_str = f"  {cls_idx}   | " + " | ".join([f"{all_metrics_test[j][cls_idx]:.4f}" for j in range(len(metric_names_test))])
+            print(metrics_str)
+        
+        print("-" * len(header_test))
+        mean_iou_test = np.mean(test_avg_class_iou)
+        mean_recall_test = np.mean(test_avg_class_recall)
+        mean_f1_test = np.mean(test_avg_class_f1)
+        mean_mcc_test = np.mean(test_avg_class_mcc)
+        
+        print(f"Mean  | {mean_iou_test:.4f} | {mean_recall_test:.4f} | {mean_f1_test:.4f} | {mean_mcc_test:.4f}")
+        
+        # Append test results to the log file
+        with open(f'{logdir}/training.log', 'a') as log_file:
+            log_file.write("\n--- Test Results ---\n")
+            log_file.write(f"Test Loss: {test_loss:.4f}\n")
+            log_file.write(header_test + "\n")
+            log_file.write("-" * len(header_test) + "\n")
+            for cls_idx in range(NUM_CLASSES):
+                 metrics_str = f"  {cls_idx}   | " + " | ".join([f"{all_metrics_test[j][cls_idx]:.4f}" for j in range(len(metric_names_test))])
+                 log_file.write(metrics_str + "\n")
+            log_file.write("-" * len(header_test) + "\n")
+            log_file.write(f"Mean  | {mean_iou_test:.4f} | {mean_recall_test:.4f} | {mean_f1_test:.4f} | {mean_mcc_test:.4f}\n")
+
+    else:
+        print(f"Error: Best model checkpoint not found at {best_model_path}. Skipping test phase.")
+
+    # --------------- END OF ADDED TEST SECTION ---------------
