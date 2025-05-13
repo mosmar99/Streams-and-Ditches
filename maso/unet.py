@@ -10,19 +10,15 @@ import time
 import numpy as np
 import argparse
 
-# argparse
 parser = argparse.ArgumentParser(description='UNet Training')
 parser.add_argument('--logdir', type=str, default='logs', help='Directory to save logs')
 args = parser.parse_args()
 logdir = args.logdir
 
-# device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# costants
 NUM_CLASSES = 3
 
-# HPTs
 num_epochs = 100
 batch_size = 8
 learning_rate = 0.001
@@ -49,7 +45,6 @@ def crop_img(og_tensor, target_tensor):
 
 
 def add_padding(inputs):
-    '''Add symmetric zero-padding to make H and W powers of 2'''
     _, _, height, width = inputs.size()
 
     height_correct = 0 if (height & (height - 1) == 0) and height != 0 else 2 ** math.ceil(math.log2(height)) - height
@@ -66,7 +61,6 @@ def add_padding(inputs):
     return padded_inputs, padding
 
 def remove_padding(tensor, padding):
-    '''Remove padding from (left, right, top, bottom)'''
     left, right, top, bottom = padding
 
     bottom = None if bottom == 0 else -bottom
@@ -84,14 +78,6 @@ class UNet(nn.Module):
         self.down_conv3 = double_conv(64, 128)
         self.down_conv4 = double_conv(128, 256)
         self.down_conv5 = double_conv(256, 512)
-        # self.down_conv6 = double_conv(512, 1024)
-
-        # self.up_trans_0 = nn.ConvTranspose2d(
-        #     in_channels=1024,
-        #     out_channels=512,
-        #     kernel_size=2,
-        #     stride=2)
-        # self.up_conv_0 = double_conv(1024, 512)
 
         self.up_trans_1 = nn.ConvTranspose2d(
             in_channels=512,
@@ -128,8 +114,6 @@ class UNet(nn.Module):
         )
 
     def forward(self, image):
-        # bs, c, h, w = image.shape
-        # encoder
         x1 = self.down_conv1(image)
         x2 = self.max_pool_2x2(x1)
         x3 = self.down_conv2(x2)
@@ -139,19 +123,12 @@ class UNet(nn.Module):
         x7 = self.down_conv4(x6)
         x8 = self.max_pool_2x2(x7)
         x9 = self.down_conv5(x8)
-        # x10 = self.max_pool_2x2(x9)
-        # x11 = self.down_conv6(x10)
-
-        # # decoder
-        # x = self.up_trans_0(x11)
-        # y = crop_img(x9, x)
-        # x = self.up_conv_0(torch.cat([x, y], dim=1))
 
         x = self.up_trans_1(x9)
         y = crop_img(x7, x)
         x = self.up_conv_1(torch.cat([x, y], dim=1))
 
-        x = self.up_trans_2(x7)
+        x = self.up_trans_2(x) # This line had x7 as input, should be x from previous layer
         y = crop_img(x5, x)
         x = self.up_conv_2(torch.cat([x, y], dim=1))
 
@@ -162,7 +139,6 @@ class UNet(nn.Module):
         x = self.up_trans_4(x)
         y = crop_img(x1, x)
         x = self.up_conv_4(torch.cat([x, y], dim=1))
-
 
         x = self.out(x)
 
@@ -184,10 +160,7 @@ class UNetDataset(Dataset):
         label_path = os.path.join(self.label_folder, file_name) + '.tif'
 
         image = Image.open(image_path).convert("F")
-        label = Image.open(label_path).convert("F") 
-        
-        # image = tiff.imread(image_path)
-        # label = tiff.imread(label_path)
+        label = Image.open(label_path).convert("F")
 
         image_tensor = self.transform(image)
         label_tensor = self.transform(label)
@@ -196,7 +169,6 @@ class UNetDataset(Dataset):
 
 def calculate_iou(outputs, labels, num_classes):
     preds = torch.argmax(outputs, dim=1)
-    # flatten the predictions and labels
     preds = preds.view(-1)
     labels = labels.view(-1)
     intersection_counts = []
@@ -214,30 +186,25 @@ def calculate_iou(outputs, labels, num_classes):
     return intersection_counts, union_counts
 
 def calculate_recall(outputs_logits, labels, num_classes):
-    # Upsample logits to match label size BEFORE argmax
-    upsampled_logits = F.interpolate(outputs_logits,
-                                     size=labels.shape[-2:], # Target H, W
-                                     mode='bilinear',
-                                     align_corners=False)
-    preds = torch.argmax(upsampled_logits, dim=1)
-
+    preds = torch.argmax(outputs_logits, dim=1)
     preds = preds.view(-1)
     labels = labels.view(-1)
 
-    true_positives_counts = []
-    actual_positives_counts = []
+    batch_true_positives = []
+    batch_actual_positives = []
+
     for cls in range(num_classes):
         pred_mask = (preds == cls)
         label_mask = (labels == cls)
 
-        true_positives = torch.logical_and(pred_mask, label_mask).sum().float()
-        total_ground_truth = label_mask.sum().float()
+        tp = torch.logical_and(pred_mask, label_mask).sum().item()
+        batch_true_positives.append(tp)
 
-        true_positives_counts.append(true_positives.item())
-        # Avoid division by zero if no ground truth positives exist for the class
-        actual_positives_counts.append(total_ground_truth.item() if total_ground_truth.item() > 0 else 1e-6) # Add epsilon
+        actual_positives = label_mask.sum().item()
+        batch_actual_positives.append(actual_positives)
 
-    return true_positives_counts, actual_positives_counts
+    return batch_true_positives, batch_actual_positives
+
 
 if __name__ == "__main__":
     begin_time = time.time()
@@ -246,7 +213,6 @@ if __name__ == "__main__":
         with open(file_path, 'r') as f:
             return [line.strip() for line in f.readlines()]
 
-    # NAMES: Read file lists
     test_fnames_path = './data/mapio_folds/f1/test_files.dat'
     train_fnames_path = './data/mapio_folds/f1/train_files.dat'
     val_fnames_path = './data/mapio_folds/f1/val_files.dat'
@@ -255,7 +221,6 @@ if __name__ == "__main__":
     test_files = read_file_list(test_fnames_path)
     val_files = read_file_list(val_fnames_path)
 
-    # Create Datasets
     image_folder = './data/05m_chips/slope/'
     label_folder = './data/05m_chips/labels/'
     train_dataset = UNetDataset(train_files, image_folder, label_folder)
@@ -263,92 +228,99 @@ if __name__ == "__main__":
     val_dataset = UNetDataset(val_files, image_folder, label_folder)
     print(f"Created datasets with {len(train_dataset)} train, {len(test_dataset)} test, {len(val_dataset)} val samples.")
 
-    # Create DataLoaders
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=15, pin_memory=True)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=15, pin_memory=True)
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=15, pin_memory=True)
     print(f"Created DataLoaders with batch size {batch_size}")
 
-    # Create a UNet model
     model = UNet().to(device)
 
-    # Loss and optimizer
     weights = torch.tensor([1.0, 5.0, 20.0])
     criterion = nn.CrossEntropyLoss(weight=weights.to(device))
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    # Training Loop
     total_steps = len(train_loader)
     for epoch in range(num_epochs):
         start_time = time.time()
-        model.train() 
+        model.train()
         running_loss = 0.0
         for i, (images, labels) in enumerate(train_loader):
-            # add padding to images and labels
             images, padding = add_padding(images)
-            labels, _ = add_padding(labels) 
+            labels_padded, _ = add_padding(labels)
             images = images.to(device)
-            labels = labels.to(device)
+            squeezed_labels_padded = labels_padded.squeeze(1).long().to(device)
 
-            # Forward pass
             outputs = model(images)
-            loss = criterion(outputs, labels.squeeze(1).long()) # Labels need to be LongTensor of shape (N, H, W)
+            loss = criterion(outputs, squeezed_labels_padded)
 
-            # Backward and optimize
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            running_loss += loss.item() * images.size(0) # Accumulate loss weighted by batch size
+            running_loss += loss.item() * images.size(0)
 
             if (i+1) % 10 == 0:
-                 print(f"Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{total_steps}], Loss: {loss.item()}", flush=True)
+                    print(f"Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{total_steps}], Loss: {loss.item()}", flush=True)
 
-        epoch_loss = running_loss / len(train_dataset) # Calculate average loss for the epoch
+        epoch_loss = running_loss / len(train_dataset)
         print(f" -- Epoch [{epoch+1}/{num_epochs}], Average Training Loss: {epoch_loss:.4f}", flush=True)
 
-        # Validation Loop
         model.eval()
         val_loss = 0.0
         total_intersections = [0] * NUM_CLASSES
         total_unions = [0] * NUM_CLASSES
+        total_true_positives_recall = [0] * NUM_CLASSES
+        total_actual_positives_in_label = [0] * NUM_CLASSES
+
         with torch.no_grad():
             for images, labels in val_loader:
+                # setup
                 images, padding = add_padding(images)
-                labels, _ = add_padding(labels) 
+                labels_padded, _ = add_padding(labels)
                 images = images.to(device)
-                labels = labels.to(device)
+                squeezed_labels_padded = labels_padded.squeeze(1).long().to(device)
 
+                # loss
                 outputs = model(images)
-                loss = criterion(outputs, labels.squeeze(1).long())
+                loss = criterion(outputs, squeezed_labels_padded)
                 val_loss += loss.item() * images.size(0)
 
-                batch_intersections, batch_unions = calculate_iou(outputs, labels.squeeze(1), NUM_CLASSES)
+                # IoU statistics
+                batch_intersections, batch_unions = calculate_iou(outputs, squeezed_labels_padded, NUM_CLASSES)
                 for cls in range(NUM_CLASSES):
                     total_intersections[cls] += batch_intersections[cls]
                     total_unions[cls] += batch_unions[cls]
+
+                # Recall statistics
+                batch_tp_recall, batch_ap_recall = calculate_recall(outputs, squeezed_labels_padded, NUM_CLASSES)
+                for cls in range(NUM_CLASSES):
+                    total_true_positives_recall[cls] += batch_tp_recall[cls]
+                    total_actual_positives_in_label[cls] += batch_ap_recall[cls]
 
         val_loss /= len(val_dataset)
         avg_class_iou = []
         avg_class_recall = []
         for cls in range(NUM_CLASSES):
+            # iou
             iou = total_intersections[cls] / total_unions[cls] if total_unions[cls] > 0 else 0.0
             avg_class_iou.append(iou)
 
-            recall = total_true_positives[cls] / (total_actual_positives[cls] + 1e-6)
+            # recall
+            recall = total_true_positives_recall[cls] / total_actual_positives_in_label[cls] if total_actual_positives_in_label[cls] > 0 else 0.0
             avg_class_recall.append(recall)
-            
+
+        if not os.path.exists(logdir):
+            os.makedirs(logdir)
         with open(f'{logdir}/training.log', 'a') as log_file:
             if epoch == 0:
                 log_file.write('epoch,val_loss,iou_class0,iou_class1,iou_class2,recall_class0,recall_class1,recall_class2\n')
             log_file.write(f"{epoch+1},{val_loss:.4f},{','.join([f'{iou:.4f}' for iou in avg_class_iou])},{','.join([f'{recall:.4f}' for recall in avg_class_recall])}\n")
         end_time = time.time()
-        print(f" -- Validation Loss: {val_loss:.4f}, Average Validation IoU per class: {avg_class_iou}", flush=True)
+        print(f" -- Validation Loss: {val_loss:.4f}, Average Validation IoU per class: {avg_class_iou}, Average Validation Recall per class: {avg_class_recall}", flush=True)
         print(f" -- Time: {end_time - start_time:.2f} seconds\n", flush=True)
 
     final_time = time.time()
     print(f"Training completed in {(final_time - begin_time) / 60:.2f} minutes", flush=True)
 
-    # Save the model checkpoint
     torch.save(model.state_dict(), 'unet_model.pth')
     print("Model saved as unet_model.pth")
