@@ -410,10 +410,17 @@ if __name__ == "__main__":
             os.makedirs(logdir)
             
         log_header = 'epoch,val_loss'
-        log_values = f"{epoch+1},{val_loss:.4f}"
-        for i in range(NUM_CLASSES):
-            log_header += f',iou_class{i},recall_class{i},f1_class{i},mcc_class{i}'
-            log_values += f',{avg_class_iou[i]:.4f},{avg_class_recall[i]:.4f},{avg_class_f1[i]:.4f},{avg_class_mcc[i]:.4f}'
+        log_values = f"{epoch + 1},{val_loss:.4f}"
+
+        # Collect metrics for each class and format them
+        recalls = [f'{avg_class_recall[i]:.4f}' for i in range(NUM_CLASSES)]
+        f1_scores = [f'{avg_class_f1[i]:.4f}' for i in range(NUM_CLASSES)]
+        mccs = [f'{avg_class_mcc[i]:.4f}' for i in range(NUM_CLASSES)]
+        ious = [f'{avg_class_iou[i]:.4f}' for i in range(NUM_CLASSES)]
+
+        # Append metrics to log header and values
+        log_header += ''.join([f',recall_class{i},f1_class{i},mcc_class{i},iou_class{i}' for i in range(NUM_CLASSES)])
+        log_values += ''.join([f',{recalls[i]},{f1_scores[i]},{mccs[i]},{ious[i]}' for i in range(NUM_CLASSES)])
         
         with open(f'{logdir}/training.log', 'a') as log_file:
             if epoch == 0:
