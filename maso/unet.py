@@ -27,7 +27,7 @@ print(f"num_epochs: {num_epochs}, batch_size: {batch_size}, learning_rate: {lear
 
 def double_conv(in_c, out_c):
     conv = nn.Sequential(
-        nn.Conv2d(in_c, out_c, kernel_size=3, padding='same', bias=False), 
+        nn.Conv2d(in_c, out_c, kernel_size=3, padding='same', bias=False),
         nn.BatchNorm2d(out_c),
         nn.ReLU(inplace=True),
         nn.Conv2d(out_c, out_c, kernel_size=3, padding='same', bias=False),
@@ -130,7 +130,7 @@ class UNet(nn.Module):
         y = crop_img(x7, x)
         x = self.up_conv_1(torch.cat([x, y], dim=1))
 
-        x = self.up_trans_2(x) # This line had x7 as input, should be x from previous layer
+        x = self.up_trans_2(x) # Corrected: input from previous upsampling block
         y = crop_img(x5, x)
         x = self.up_conv_2(torch.cat([x, y], dim=1))
 
@@ -169,8 +169,8 @@ class UNetDataset(Dataset):
 
         return image_tensor, label_tensor
 
-def calculate_iou(outputs, labels, num_classes):
-    preds = torch.argmax(outputs, dim=1)
+def calculate_iou(outputs_logits, labels, num_classes):
+    preds = torch.argmax(outputs_logits, dim=1)
     preds = preds.view(-1)
     labels = labels.view(-1)
     intersection_counts = []
@@ -206,6 +206,56 @@ def calculate_recall(outputs_logits, labels, num_classes):
         batch_actual_positives.append(actual_positives)
 
     return batch_true_positives, batch_actual_positives
+
+def calculate_f1_components(outputs_logits, labels, num_classes):
+    preds = torch.argmax(outputs_logits, dim=1).view(-1)
+    labels = labels.view(-1)
+    
+    batch_tp = []
+    batch_fp = []
+    batch_fn = []
+
+    for cls in range(num_classes):
+        pred_mask_cls = (preds == cls)
+        label_mask_cls = (labels == cls)
+        
+        tp = torch.logical_and(pred_mask_cls, label_mask_cls).sum().item()
+        fp = torch.logical_and(pred_mask_cls, ~label_mask_cls).sum().item()
+        fn = torch.logical_and(~pred_mask_cls, label_mask_cls).sum().item()
+        
+        batch_tp.append(tp)
+        batch_fp.append(fp)
+        batch_fn.append(fn)
+        
+    return batch_tp, batch_fp, batch_fn
+
+def calculate_mcc_components(outputs_logits, labels, num_classes):
+    preds = torch.argmax(outputs_logits, dim=1).view(-1)
+    labels_flat = labels.view(-1)
+    
+    batch_tp = []
+    batch_tn = []
+    batch_fp = []
+    batch_fn = []
+
+    for cls in range(num_classes):
+        pred_is_cls = (preds == cls)
+        label_is_cls = (labels_flat == cls)
+        
+        pred_is_not_cls = ~pred_is_cls
+        label_is_not_cls = ~label_is_cls
+        
+        tp = torch.logical_and(pred_is_cls, label_is_cls).sum().item()
+        tn = torch.logical_and(pred_is_not_cls, label_is_not_cls).sum().item()
+        fp = torch.logical_and(pred_is_cls, label_is_not_cls).sum().item()
+        fn = torch.logical_and(pred_is_not_cls, label_is_cls).sum().item()
+        
+        batch_tp.append(tp)
+        batch_tn.append(tn)
+        batch_fp.append(fp)
+        batch_fn.append(fn)
+        
+    return batch_tp, batch_tn, batch_fp, batch_fn
 
 
 if __name__ == "__main__":
@@ -262,7 +312,7 @@ if __name__ == "__main__":
             running_loss += loss.item() * images.size(0)
 
             if (i+1) % 10 == 0:
-                    print(f"Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{total_steps}], Loss: {loss.item()}", flush=True)
+                print(f"Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{total_steps}], Loss: {loss.item()}", flush=True)
 
         epoch_loss = running_loss / len(train_dataset)
         print(f" -- Epoch [{epoch+1}/{num_epochs}], Average Training Loss: {epoch_loss:.4f}", flush=True)
@@ -273,6 +323,16 @@ if __name__ == "__main__":
         total_unions = [0] * NUM_CLASSES
         total_true_positives_recall = [0] * NUM_CLASSES
         total_actual_positives_in_label = [0] * NUM_CLASSES
+        
+        total_tp_f1 = [0] * NUM_CLASSES
+        total_fp_f1 = [0] * NUM_CLASSES
+        total_fn_f1 = [0] * NUM_CLASSES
+
+        total_tp_mcc = [0] * NUM_CLASSES
+        total_tn_mcc = [0] * NUM_CLASSES
+        total_fp_mcc = [0] * NUM_CLASSES
+        total_fn_mcc = [0] * NUM_CLASSES
+
 
         with torch.no_grad():
             for images, labels in val_loader:
@@ -298,29 +358,73 @@ if __name__ == "__main__":
                 for cls in range(NUM_CLASSES):
                     total_true_positives_recall[cls] += batch_tp_recall[cls]
                     total_actual_positives_in_label[cls] += batch_ap_recall[cls]
+                
+                # F1 components
+                batch_tp_f1_val, batch_fp_f1_val, batch_fn_f1_val = calculate_f1_components(outputs, squeezed_labels_padded, NUM_CLASSES)
+                for cls in range(NUM_CLASSES):
+                    total_tp_f1[cls] += batch_tp_f1_val[cls]
+                    total_fp_f1[cls] += batch_fp_f1_val[cls]
+                    total_fn_f1[cls] += batch_fn_f1_val[cls]
+
+                # MCC components
+                batch_tp_mcc_val, batch_tn_mcc_val, batch_fp_mcc_val, batch_fn_mcc_val = calculate_mcc_components(outputs, squeezed_labels_padded, NUM_CLASSES)
+                for cls in range(NUM_CLASSES):
+                    total_tp_mcc[cls] += batch_tp_mcc_val[cls]
+                    total_tn_mcc[cls] += batch_tn_mcc_val[cls]
+                    total_fp_mcc[cls] += batch_fp_mcc_val[cls]
+                    total_fn_mcc[cls] += batch_fn_mcc_val[cls]
+
 
         val_loss /= len(val_dataset)
         avg_class_iou = []
         avg_class_recall = []
+        avg_class_f1 = []
+        avg_class_mcc = []
+
         for cls in range(NUM_CLASSES):
             # iou
             iou = total_intersections[cls] / total_unions[cls] if total_unions[cls] > 0 else 0.0
             avg_class_iou.append(iou)
 
             # recall
-            recall = total_true_positives_recall[cls] / total_actual_positives_in_label[cls] if total_actual_positives_in_label[cls] > 0 else 0.0
-            avg_class_recall.append(recall)
+            recall_val = total_true_positives_recall[cls] / total_actual_positives_in_label[cls] if total_actual_positives_in_label[cls] > 0 else 0.0
+            avg_class_recall.append(recall_val)
+            
+            # F1-score
+            tp_f1, fp_f1, fn_f1 = total_tp_f1[cls], total_fp_f1[cls], total_fn_f1[cls]
+            precision_f1 = tp_f1 / (tp_f1 + fp_f1) if (tp_f1 + fp_f1) > 0 else 0.0
+            recall_f1 = tp_f1 / (tp_f1 + fn_f1) if (tp_f1 + fn_f1) > 0 else 0.0
+            f1_score = 2 * (precision_f1 * recall_f1) / (precision_f1 + recall_f1) if (precision_f1 + recall_f1) > 0 else 0.0
+            avg_class_f1.append(f1_score)
+
+            # MCC calculation
+            tp, tn, fp, fn = total_tp_mcc[cls], total_tn_mcc[cls], total_fp_mcc[cls], total_fn_mcc[cls]
+            numerator = (tp * tn) - (fp * fn)
+            denominator_val = (tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)
+            mcc = 0.0 if denominator_val == 0 else numerator / math.sqrt(denominator_val)
+            avg_class_mcc.append(mcc)
+
 
         if not os.path.exists(logdir):
             os.makedirs(logdir)
+            
+        log_header = 'epoch,val_loss'
+        log_values = f"{epoch+1},{val_loss:.4f}"
+        for i in range(NUM_CLASSES):
+            log_header += f',iou_class{i},recall_class{i},f1_class{i},mcc_class{i}'
+            log_values += f',{avg_class_iou[i]:.4f},{avg_class_recall[i]:.4f},{avg_class_f1[i]:.4f},{avg_class_mcc[i]:.4f}'
+        
         with open(f'{logdir}/training.log', 'a') as log_file:
             if epoch == 0:
-                log_file.write('epoch,val_loss,iou_class0,iou_class1,iou_class2,recall_class0,recall_class1,recall_class2\n')
-            log_file.write(f"{epoch+1},{val_loss:.4f},{','.join([f'{iou:.4f}' for iou in avg_class_iou])},{','.join([f'{recall:.4f}' for recall in avg_class_recall])}\n")
+                log_file.write(log_header + '\n')
+            log_file.write(log_values + '\n')
+            
         end_time = time.time()
         print(f" -- Validation Loss: {val_loss:.4f}", flush=True)
-        print(f" -- Average Validation IoU per class:    {avg_class_iou}", flush=True)
-        print(f" -- Average Validation Recall per class: {avg_class_recall}", flush=True)
+        print(f" -- Average Validation IoU per class:     {avg_class_iou}", flush=True)
+        print(f" -- Average Validation Recall per class:  {avg_class_recall}", flush=True)
+        print(f" -- Average Validation F1 per class:      {avg_class_f1}", flush=True)
+        print(f" -- Average Validation MCC per class:     {avg_class_mcc}", flush=True)
         print(f" -- Time: {end_time - start_time:.2f} seconds\n", flush=True)
 
     final_time = time.time()
