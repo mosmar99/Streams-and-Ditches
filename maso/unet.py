@@ -310,8 +310,8 @@ if __name__ == "__main__":
         # Validation Loop
         model.eval()
         val_loss = 0.0
-        total_true_positives = [0] * NUM_CLASSES
-        total_actual_positives = [0] * NUM_CLASSES
+        total_intersections = [0] * NUM_CLASSES
+        total_unions = [0] * NUM_CLASSES
         with torch.no_grad():
             for images, labels in val_loader:
                 images, padding = add_padding(images)
@@ -323,10 +323,10 @@ if __name__ == "__main__":
                 loss = criterion(outputs, labels.squeeze(1).long())
                 val_loss += loss.item() * images.size(0)
 
-                batch_true_positives, batch_actual_positives = calculate_recall(logits, labels, NUM_CLASSES)
+                batch_intersections, batch_unions = calculate_iou(outputs, labels.squeeze(1), NUM_CLASSES)
                 for cls in range(NUM_CLASSES):
-                    total_true_positives[cls] += batch_true_positives[cls]
-                    total_actual_positives[cls] += batch_actual_positives[cls]
+                    total_intersections[cls] += batch_intersections[cls]
+                    total_unions[cls] += batch_unions[cls]
 
         val_loss /= len(val_dataset)
         avg_class_iou = []
@@ -337,7 +337,7 @@ if __name__ == "__main__":
 
             recall = total_true_positives[cls] / (total_actual_positives[cls] + 1e-6)
             avg_class_recall.append(recall)
-
+            
         with open(f'{logdir}/training.log', 'a') as log_file:
             if epoch == 0:
                 log_file.write('epoch,val_loss,iou_class0,iou_class1,iou_class2,recall_class0,recall_class1,recall_class2\n')
