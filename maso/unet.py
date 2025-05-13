@@ -27,10 +27,12 @@ print(f"num_epochs: {num_epochs}, batch_size: {batch_size}, learning_rate: {lear
 
 def double_conv(in_c, out_c):
     conv = nn.Sequential(
-        nn.Conv2d(in_c, out_c, kernel_size=3, padding='same'),
+        nn.Conv2d(in_c, out_c, kernel_size=3, padding='same', bias=False), 
+        nn.BatchNorm2d(out_c),
         nn.ReLU(inplace=True),
-        nn.Conv2d(out_c, out_c, kernel_size=3, padding='same'),
-        nn.ReLU(inplace=True),
+        nn.Conv2d(out_c, out_c, kernel_size=3, padding='same', bias=False),
+        nn.BatchNorm2d(out_c),
+        nn.ReLU(inplace=True)
     )
     return conv
 
