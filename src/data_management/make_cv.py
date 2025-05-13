@@ -35,11 +35,16 @@ def make_rcv(file_names, folds_dir, k=10, r=10):
         make_cv(file_names, fold_dir_r, k=k)
 
 if __name__ == '__main__':
-    labels_dir = "./data/05m_chips/labels"
-    folds_dir = "./data/05m_folds_mapio"
+    import argparse
+    parser = argparse.ArgumentParser(description="Generate RCV folds from labeled .tif files")
 
-    file_names = [f for f in os.listdir(labels_dir) if f.endswith(".tif")]
+    parser.add_argument('labels_dir', type=str, help='Directory containing .tif label files')
+    parser.add_argument('folds_dir', type=str, help='Directory to store output folds')
+    parser.add_argument('k', type=int, help='Number of folds (K)')
+    parser.add_argument('r', type=int, help='Number of repetitions (R)')
 
-    make_rcv(file_names, folds_dir, k=10, r=10)
+    args = parser.parse_args()
 
+    file_names = [f for f in os.listdir(args.labels_dir) if f.endswith(".tif")]
+    make_rcv(file_names, args.folds_dir, k=args.k, r=args.r)
 
