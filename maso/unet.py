@@ -71,6 +71,17 @@ def remove_padding(tensor, padding):
 
     return tensor[:, :, top:bottom, left:right]
 
+class MinCheckpoint():
+    def __init__(self, logdir):
+        self.min_loss = np.inf
+        self.logdir = logdir
+
+    def save(self, model, loss):
+        if loss < self.min_loss:
+            print(f" -- Updated Checkpoint: {self.min_loss} > {loss}", flush=True)
+            self.min_loss = loss
+            torch.save(model.state_dict(), os.path.join(self.logdir, 'unet_model_ckpt.pth'))
+
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
@@ -261,6 +272,7 @@ def calculate_mcc_components(outputs_logits, labels, num_classes):
 
 if __name__ == "__main__":
     begin_time = time.time()
+    checkpoint_handler = MinCheckpoint(logdir)
 
     def read_file_list(file_path):
         with open(file_path, 'r') as f:
@@ -446,6 +458,8 @@ if __name__ == "__main__":
         print(f" -- Average Validation F1 per class:      {avg_class_f1}", flush=True)
         print(f" -- Average Validation MCC per class:     {avg_class_mcc}", flush=True)
         print(f" -- Time: {end_time - start_time:.2f} seconds\n", flush=True)
+
+        checkpoint_handler.save(model, val_loss)
 
     final_time = time.time()
     print(f"Training completed in {(final_time - begin_time) / 60:.2f} minutes", flush=True)
