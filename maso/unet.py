@@ -25,14 +25,15 @@ learning_rate = 0.001
 
 print(f"num_epochs: {num_epochs}, batch_size: {batch_size}, learning_rate: {learning_rate}")
 
-def double_conv(in_c, out_c):
+def double_conv(in_c, out_c, dropout_prob=0.1): 
     conv = nn.Sequential(
         nn.Conv2d(in_c, out_c, kernel_size=3, padding='same', bias=False),
         nn.BatchNorm2d(out_c),
         nn.ReLU(inplace=True),
         nn.Conv2d(out_c, out_c, kernel_size=3, padding='same', bias=False),
         nn.BatchNorm2d(out_c),
-        nn.ReLU(inplace=True)
+        nn.ReLU(inplace=True),
+        nn.Dropout(p=dropout_prob) 
     )
     return conv
 
