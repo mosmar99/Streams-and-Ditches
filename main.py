@@ -28,7 +28,7 @@ def enable_logging(log_path, file_name):
 
 def main(log_dir, epochs):
     seed = 42
-    batch_size = 4
+    batch_size = 8
     in_channels = 1
     classes = "0,1,2"
     device = 'cuda'
@@ -75,17 +75,17 @@ def main(log_dir, epochs):
 
     train_it = torch.utils.data.DataLoader(
                                     train_set, shuffle=True,
-                                    batch_size=batch_size, num_workers=0,
+                                    batch_size=batch_size, num_workers=2,
                                     generator=torch.Generator('cuda')
                                                     .manual_seed(seed))
     val_it = torch.utils.data.DataLoader(
                                     val_set, shuffle=True,
-                                    batch_size=batch_size, num_workers=0,
+                                    batch_size=batch_size, num_workers=2,
                                     generator=torch.Generator('cuda')
                                                     .manual_seed(seed))
     test_it = torch.utils.data.DataLoader(
                                     test_set, shuffle=True,
-                                    batch_size=batch_size, num_workers=0,
+                                    batch_size=batch_size, num_workers=2,
                                     generator=torch.Generator('cuda')
                                                     .manual_seed(seed))
 
