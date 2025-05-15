@@ -5,7 +5,20 @@ from skimage.segmentation import watershed
 from skimage.morphology import remove_small_holes, skeletonize
 from skimage import feature
 
-def image_to_graph(image):
+def extract_majority_labels(multi_seg_mask, target):
+    labels = []
+    for segment in np.unique(multi_seg_mask):
+        if segment == 0:
+            continue
+        seg_mask = segment == multi_seg_mask
+
+        target_masked = target[seg_mask]
+        unique, counts = np.unique(target_masked, return_counts=True)
+        majority_index = np.argmax(counts)
+        labels.append(unique[majority_index])
+    return np.array(labels)
+
+def image_to_graph(image, label_image):
     canny = np.zeros_like(image)
     for label in np.unique(image):
         if label == 0:
@@ -42,7 +55,10 @@ def image_to_graph(image):
 
     centers = center_of_mass(image != 0, ws_alpha_reindex, labels_reindex)
     centers_int = np.round(centers).astype(int)
-    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int))
+
+    predicted_label = extract_majority_labels(ws_alpha_reindex, image)
+    target_label = extract_majority_labels(ws_alpha_reindex, label_image)
+    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, target_label))
 
     # dilated_ws = grey_dilation(ws_alpha, size=(3, 3))
 

@@ -48,7 +48,8 @@ def main(logdir, epochs=42, batch_size=42):
             pred = torch.argmax(pred, dim=1)
 
         pred_cpu = pred.cpu().numpy()
-        graphs = [graph_processing.image_to_graph(pred_cpu[i]) for i in range(pred_cpu.shape[0])]
+        labes_cpu = labels.cpu().numpy()
+        graphs = [graph_processing.image_to_graph(pred_cpu[i], labes_cpu[i]) for i in range(pred_cpu.shape[0])]
 
         for j, (nodes, connections) in enumerate(graphs):
             np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}_nodes.dat"), nodes, delimiter=",", fmt="%d")
