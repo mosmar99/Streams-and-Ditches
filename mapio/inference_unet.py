@@ -11,6 +11,12 @@ import numpy as np
 import argparse
 import unet
 import matplotlib.pyplot as plt
+import cv2
+import numpy as np
+from scipy.ndimage import center_of_mass
+from skimage.segmentation import watershed
+from skimage.morphology import remove_small_holes, skeletonize
+from skimage import feature
 
 NUM_CLASSES = 3
 
@@ -45,8 +51,8 @@ if __name__ == "__main__":
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=15, pin_memory=True)
     val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False, num_workers=15, pin_memory=True)
     print(f"Created DataLoaders with batch size {batch_size}")
-
-    best_model_path = os.path.join("./logs/m1/20250513_161035", 'unet_model_ckpt.pth')
+    # "./logs/m1/20250513_161035"
+    best_model_path = os.path.join("./logs/m1/20250515_134712", 'unet_model_ckpt.pth')
     if os.path.exists(best_model_path):
         print(f"Loading best model from: {best_model_path}")
         test_model = unet.UNet().to(device)
@@ -86,6 +92,7 @@ if __name__ == "__main__":
 
             bg = outputs[0,1].cpu().numpy() + outputs[0,2].cpu().numpy()
             bg_thresh = bg > 0.15
+            skel_bg = skeletonize(bg_thresh)
             fig, ax = plt.subplots(2,2, figsize=(15, 10))
             ax[0][0].imshow(bg, cmap="Greys")
             ax[0][0].set_title("background_probabilities")
@@ -93,7 +100,7 @@ if __name__ == "__main__":
             ax[0][1].imshow(bg_thresh, cmap="Greys")
             ax[0][1].set_title("bakground threshold")
             ax[0][1].axis("off")
-            ax[1][0].imshow(class_outputs[0].cpu().numpy(), cmap="Greys")
+            ax[1][0].imshow(skel_bg, cmap="Greys")
             ax[1][0].set_title("Predictions")
             ax[1][0].axis("off")
             ax[1][1].imshow(labels[0].cpu().squeeze(0).numpy(), cmap="Greys")

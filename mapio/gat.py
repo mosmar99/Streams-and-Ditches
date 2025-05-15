@@ -20,7 +20,7 @@ def calculate_angle(x_vec, y_vec):
     return angle
 
 def main(log_dir, epochs):
-    data_dir = './logs/m1/test_gat/graphs'
+    data_dir = './logs/m1/test_gat2/graphs'
     files = os.listdir(data_dir)
     node_files = sorted([f for f in files if f.endswith('.nodes')])
     edge_files = sorted([f for f in files if f.endswith('.edges')])
@@ -380,9 +380,9 @@ def main(log_dir, epochs):
     num_heads = 11
 
     # Fixed parameters
-    NUM_LAYERS = 3
+    NUM_LAYERS = 7
     OUTPUT_DIM = 3
-    LEARNING_RATE = 1e-5
+    LEARNING_RATE = 1e-3
     ATTENTION_TYPE = "std"
 
     print("\n--- Starting Hyperparameter Search ---")

@@ -23,6 +23,7 @@ def main(logdir, epochs=42, batch_size=42):
     train_dataset = UNetDataset(train_files, image_folder, label_folder)
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=15, pin_memory=True)
 
+    # 20250513_161035
     # instantiate the model
     test_model = UNet().to(device)
     best_model_path = 'logs/m1/20250515_134712/unet_model_ckpt.pth'
