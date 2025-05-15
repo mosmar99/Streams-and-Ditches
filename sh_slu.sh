@@ -30,7 +30,7 @@
 echo "now processing task id:: ${SLURM_JOB_ID} on ${SLURMD_NODENAME}"
 
 # Create a main log directory if it doesn't exist
-MODEL="learning"
+MODEL="unet"
 MAIN_LOG_DIR="logs/${MODEL}"
 mkdir -p "$MAIN_LOG_DIR"
 
@@ -42,10 +42,10 @@ mkdir "$JOB_LOG_DIR"
 mv "slurm-${SLURM_JOB_ID}.out" "$JOB_LOG_DIR/slurm-${SLURM_JOB_ID}.out"
 
 source ~/micromamba/etc/profile.d/micromamba.sh
-micromamba activate slu
+micromamba activate dl
 
 # Run your python script and redirect output to a file within the job's log directory
-python maso/unet.py --logdir "$JOB_LOG_DIR" > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
+python mapio/"$MODEL".py --logdir "$JOB_LOG_DIR" > "${JOB_LOG_DIR}/output_${SLURM_JOB_ID}.txt"
 
 echo "finished task with id:: ${SLURM_JOB_ID}"
 # happy end
