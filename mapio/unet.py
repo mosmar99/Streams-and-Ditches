@@ -474,7 +474,9 @@ if __name__ == "__main__":
 
     model = UNet().to(device)
 
-    criterion = nn.WeightedMSELoss()
+    # set weights for the loss function
+    weights = torch.tensor([1.0, 1.0, 1.0]).to(device)
+    criterion = nn.WeightedMSELoss(weights=weights, reduction='mean')
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.05)
 
     model.fit(train_loader, val_loader, num_epochs, criterion, optimizer)
