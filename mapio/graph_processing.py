@@ -2,14 +2,30 @@ import cv2
 import numpy as np
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import watershed
+from skimage.morphology import remove_small_holes, skeletonize
 from skimage import feature
 
 def image_to_graph(image):
-    kernel = np.ones((3, 3), np.uint8)
-    dia_target = cv2.dilate(image.astype(np.uint8), kernel, iterations=1).astype(np.bool)
+    canny = np.zeros_like(image)
+    for label in np.unique(image):
+        if label == 0:
+            continue
+        label_mask = image == label
 
-    canny_gauss_skel_thresh = feature.canny(dia_target, sigma=2)
-    ws = watershed(canny_gauss_skel_thresh, markers=4800)
+        # kernel = np.ones((3, 3), np.uint8)
+        kernel = np.array([[0,1,0],
+                        [1,1,1],
+                        [0,1,0]], np.uint8)
+        
+        dia_target = cv2.dilate(label_mask.astype(np.uint8), kernel, iterations=1).astype(np.bool)
+
+        canny += feature.canny(dia_target, sigma=2)
+
+    canny = (canny != 0)
+    canny = remove_small_holes(canny, area_threshold=64)
+    canny = skeletonize(canny)
+
+    ws = watershed(canny, markers=4800)
 
     ws_alpha = (ws + 1) * (image != 0)
 
@@ -39,4 +55,4 @@ def image_to_graph(image):
             if a != b:
                 label_pairs.add(tuple(sorted((a-1, b-1))))
     
-    return np.array(labeled_centers, dtype=np.int32), np.array(pairs, dtype=np.int32)
+    return np.array(labeled_centers, dtype=np.int32), np.array(list(label_pairs), dtype=np.int32)
