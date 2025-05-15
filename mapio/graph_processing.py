@@ -27,8 +27,8 @@ def image_to_graph(image, label_image):
 
         # kernel = np.ones((3, 3), np.uint8)
         kernel = np.array([[0,1,0],
-                        [1,1,1],
-                        [0,1,0]], np.uint8)
+                          [1,1,1],
+                          [0,1,0]], np.uint8)
         
         dia_target = cv2.dilate(label_mask.astype(np.uint8), kernel, iterations=1).astype(np.bool)
 

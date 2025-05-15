@@ -32,7 +32,7 @@ def main(logdir, epochs=42, batch_size=42):
     # create a directory to save the predictions
     pred_dir = os.path.join(logdir, 'predictions')
     graph_dir = os.path.join(logdir, 'graphs')
-    os.makedirs(pred_dir, exist_ok=True)
+    # os.makedirs(pred_dir, exist_ok=True)
     os.makedirs(graph_dir, exist_ok=True)
 
     # iterate over the train dataset
@@ -52,14 +52,14 @@ def main(logdir, epochs=42, batch_size=42):
         graphs = [graph_processing.image_to_graph(pred_cpu[i], labes_cpu[i]) for i in range(pred_cpu.shape[0])]
 
         for j, (nodes, connections) in enumerate(graphs):
-            np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}_nodes.dat"), nodes, delimiter=",", fmt="%d")
-            np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}_connections.dat"), connections, delimiter=",", fmt="%d")
+            np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.nodes"), nodes, delimiter=",", fmt="%d")
+            np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.edges"), connections, delimiter=",", fmt="%d")
 
         # save the predictions
-        for j in range(pred.shape[0]):
-            pred_image = pred[j].cpu().numpy().astype('uint8')
-            pred_pil = Image.fromarray(pred_image, mode='L')
-            pred_pil.save(os.path.join(pred_dir, f'pred_{i * batch_size + j}.png'))
+        # for j in range(pred.shape[0]):
+        #     pred_image = pred[j].cpu().numpy().astype('uint8')
+        #     pred_pil = Image.fromarray(pred_image, mode='L')
+        #     pred_pil.save(os.path.join(pred_dir, f'pred_{i * batch_size + j}.png'))
 
     print('All predictions saved to', pred_dir)
 
