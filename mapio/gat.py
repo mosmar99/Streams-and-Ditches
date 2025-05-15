@@ -20,7 +20,7 @@ def calculate_angle(x_vec, y_vec):
     return angle
 
 def main(log_dir, epochs):
-    data_dir = './dataset'
+    data_dir = './logs/m1/test_gat/graphs'
     files = os.listdir(data_dir)
     node_files = sorted([f for f in files if f.endswith('.nodes')])
     edge_files = sorted([f for f in files if f.endswith('.edges')])
@@ -37,7 +37,7 @@ def main(log_dir, epochs):
         base_name = edge_file.replace('.edges', '')
         combined_filenames.append((node_dict[base_name], edge_file))
 
-    node_names = ["person_id", "current_x", "current_y", "previous_x", "previous_y", "future_x", "future_y"]
+    node_names = ["node_id", "center_x", "center_y", "pred", "target"]
     edge_names = ["target", "source"]
 
     # --- Load TRAIN/TEST Data ---
@@ -52,15 +52,6 @@ def main(log_dir, epochs):
         # Make graph undirected
         edge_df = pd.concat([edge_df, edge_df.rename(columns={"source": "target", "target": "source"})])
 
-        # Make graph undirected
-        node_df["prev_step_x"] = node_df["current_x"] - node_df["previous_x"]
-        node_df["prev_step_y"] = node_df["current_y"] - node_df["previous_y"]
-        node_df["direction"] = calculate_angle(node_df["prev_step_x"], node_df["prev_step_y"])
-
-        node_df = node_df.dropna() # drop missing values in node data
-
-        edge_df = edge_df[~edge_df.isin([-1]).any(axis=1)] # drop edge links with -1 values
-        
         if edge_df.empty: # dont append edges to node list that contain no edges
             continue
 
@@ -107,13 +98,11 @@ def main(log_dir, epochs):
     def process_graphs(node_data, edge_data):
         processed_graphs = []
         for (node_df, edge_df) in list(zip(node_data, edge_data)):
-            person_ids = node_df["person_id"].tolist()
+            person_ids = node_df["node_id"].tolist()
             id_to_idx = {pid: idx for idx, pid in enumerate(person_ids)}
 
-            node_features = node_df[["current_x", "current_y",
-                                     "previous_x", "previous_y",
-                                     "direction"]].values.astype(np.float32)
-            targets = node_df[["future_x", "future_y"]].values.astype(np.float32)
+            node_features = node_df[["center_x", "center_y", "pred"]].values.astype(np.float32)
+            targets = pd.get_dummies(node_df["target"])
             edge_index = edge_df.replace({"source": id_to_idx, "target": id_to_idx}).to_numpy()
             processed_graphs.append({
                 "node_features": node_features,
@@ -190,9 +179,9 @@ def main(log_dir, epochs):
                 }
 
         output_signature = {
-            "node_features": tf.TensorSpec(shape=(None, 5), dtype=tf.float32),  
-            "edge_index": tf.TensorSpec(shape=(None, 2), dtype=tf.int32),       
-            "targets": tf.TensorSpec(shape=(None, 2), dtype=tf.float32)         
+            "node_features": tf.TensorSpec(shape=(None, 3), dtype=tf.int32),
+            "edge_index": tf.TensorSpec(shape=(None, 2), dtype=tf.int32),
+            "targets": tf.TensorSpec(shape=(None, 3), dtype=tf.int32)
         }
 
         dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
@@ -371,7 +360,7 @@ def main(log_dir, epochs):
                 x = attention_layer([x, edges]) + x
             outputs = self.output_layer(x)
             outputs = node_states[:,:2]
-            return outputs
+            return tf.nn.softmax(outputs)
 
         def train_step(self, data):
             (features_data, edges_data), targets = data
@@ -408,18 +397,18 @@ def main(log_dir, epochs):
             return {m.name: m.result() for m in self.metrics}
 
     # --- Hyperparameter Search Setup ---
-    hidden_units_list = [100]
-    num_heads_list = [11, 8, 5]
+    hidden_units = 100
+    num_heads = 11
 
     # Fixed parameters
-    NUM_LAYERS = 1
-    OUTPUT_DIM = 2
+    NUM_LAYERS = 3
+    OUTPUT_DIM = 3
     LEARNING_RATE = 1e-5
     ATTENTION_TYPE = "std"
 
     print("\n--- Starting Hyperparameter Search ---")
-    print(f"HIDDEN_UNITS options: {hidden_units_list}")
-    print(f"NUM_HEADS options: {num_heads_list}")
+    # print(f"HIDDEN_UNITS options: {hidden_units_list}")
+    # print(f"NUM_HEADS options: {num_heads_list}")
     print(f"Fixed NUM_LAYERS: {NUM_LAYERS}")
     print(f"Fixed LEARNING_RATE: {LEARNING_RATE}")
     print(f"Training Epochs per trial: {epochs}")
@@ -429,124 +418,55 @@ def main(log_dir, epochs):
     all_results = []
 
     # --- Loop through Hyperparameters ---
-    for hu in hidden_units_list:
-        for nh in num_heads_list:
-            current_params = {'hidden_units': hu, 'num_heads': nh}
-            print(f"\n--- Running Trial: {current_params} ---")
+    
+    current_params = {'hidden_units': hidden_units, 'num_heads': num_heads}
+    print(f"\n--- Running Trial: {current_params} ---")
 
-            trial_log_dir = os.path.join(log_dir, f"hu_{hu}_nh_{nh}")
-            os.makedirs(trial_log_dir, exist_ok=True)
-            print(f"Logging trial results to: {trial_log_dir}")
+    trial_log_dir = os.path.join(log_dir, f"hidden_units_{hidden_units}_num_heads_{num_heads}")
+    os.makedirs(trial_log_dir, exist_ok=True)
+    print(f"Logging trial results to: {trial_log_dir}")
 
-            loss_fn = keras.losses.MeanSquaredError()
-            optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
-            metrics = [keras.metrics.RootMeanSquaredError(name="rmse"), 
-                       keras.metrics.MeanAbsoluteError(name="mae")] 
+    loss_fn = keras.losses.CategoricalCrossentropy()
+    optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
+    metrics = [keras.metrics.F1Score(), 
+               keras.metrics.MatthewsCorrelationCoefficient(), 
+               keras.metrics.IoU(),
+               keras.metrics.Recall()] 
 
-            early_stopping = keras.callbacks.EarlyStopping(
-                monitor="val_loss",
-                patience=5,
-                min_delta=1e-5,
-                restore_best_weights=True, 
-            )
-            csv_logger = tf.keras.callbacks.CSVLogger(os.path.join(trial_log_dir, 'training.log'))
-            callbacks = [csv_logger] 
+    early_stopping = keras.callbacks.EarlyStopping(
+        monitor="val_loss",
+        patience=5,
+        min_delta=1e-5,
+        restore_best_weights=True, 
+    )
+    csv_logger = tf.keras.callbacks.CSVLogger(os.path.join(trial_log_dir, 'training.log'))
+    callbacks = [csv_logger] 
 
-            np.random.seed(NUMPY_SEED)
-            tf.random.set_seed(TF_SEED)
-            random.seed(PYTHON_RANDOM_SEED)
+    np.random.seed(NUMPY_SEED)
+    tf.random.set_seed(TF_SEED)
+    random.seed(PYTHON_RANDOM_SEED)
 
-            gat_model = GraphAttentionNetwork(
-                hidden_units=hu,
-                num_heads=nh,
-                num_layers=NUM_LAYERS,
-                output_dim=OUTPUT_DIM,
-                attention=ATTENTION_TYPE
-            )
+    gat_model = GraphAttentionNetwork(
+        hidden_units=hidden_units,
+        num_heads=num_heads,
+        num_layers=NUM_LAYERS,
+        output_dim=OUTPUT_DIM,
+        attention=ATTENTION_TYPE
+    )
 
-            # Compile model
-            gat_model.compile(loss=loss_fn, optimizer=optimizer, metrics=metrics)
+    # Compile model
+    gat_model.compile(loss=loss_fn, optimizer=optimizer, metrics=metrics)
 
-            # Train the model
-            history = gat_model.fit(
-                train_dataset.map(lambda x: (( x["node_features"], x["edge_index"] ), x['targets']) ),
-                validation_data=validation_dataset.map(lambda x: (( x["node_features"], x["edge_index"] ), x['targets']) ),
-                epochs=epochs,
-                callbacks=callbacks,
-                verbose=2,
-            )
+    # Train the model
+    history = gat_model.fit(
+        train_dataset.map(lambda x: (( x["node_features"], x["edge_index"] ), x['targets']) ),
+        validation_data=validation_dataset.map(lambda x: (( x["node_features"], x["edge_index"] ), x['targets']) ),
+        epochs=epochs,
+        callbacks=callbacks,
+        verbose=2,
+    )
 
-            print("\n--- Model Training Complete for Trial ---")
-
-            print("Evaluating best weights (from this trial) on validation data...")
-            val_results = gat_model.evaluate(
-                validation_dataset.map(lambda x: (( x["node_features"], x["edge_index"] ), x['targets']) ),
-                verbose=2
-            )
-            current_val_loss = val_results[0]
-            current_val_rmse_norm = val_results[1] 
-            current_val_mae_norm = val_results[2] 
-            current_val_rmse_mm = current_val_rmse_norm * coord_range
-            current_val_mae_mm = current_val_mae_norm * coord_range
-
-            print(f"Best Validation Loss for this trial: {current_val_loss:.6f}")
-            print(f"Best Validation RMSE (normalized) for this trial: {current_val_rmse_norm:.6f}")
-            print(f"Best Validation MAE (normalized) for this trial: {current_val_mae_mm:.6f}")
-            print(f"Best Validation RMSE (millimeters) for this trial: {current_val_rmse_mm:.2f} mm") 
-            print(f"Best Validation MAE (millimeters) for this trial: {current_val_mae_mm:.2f} mm") 
-
-            print("Evaluating best weights (from this trial) on test data...")
-            test_loss, test_rmse_norm, test_mae_norm = gat_model.evaluate(
-                test_dataset.map(lambda x: (( x["node_features"], x["edge_index"] ), x['targets']) ),
-                verbose=1,
-            )
-
-            test_rmse_mm = test_rmse_norm * coord_range
-            test_mae_mm = test_mae_norm * coord_range
-
-            print(f"\nTest Loss: {test_loss:.6f}")
-            print(f"Test RMSE (normalized): {test_rmse_norm:.6f}") 
-            print(f"Test MAE (normalized): {test_mae_norm:.6f}") 
-            print(f"Test RMSE (millimeters): {test_rmse_mm:.2f} mm") 
-            print(f"Test MAE (millimeters): {test_mae_mm:.2f} mm") 
-
-            trial_results_data = {
-                'hidden_units': hu,
-                'num_heads': nh,
-                'val_loss': current_val_loss,        
-                'val_rmse_norm': current_val_rmse_norm, 
-                'val_rmse_mm': current_val_rmse_mm,     
-                'val_mae_norm': current_val_mae_norm, 
-                'val_mae_mm': current_val_mae_mm,     
-                'test_loss': test_loss,              
-                'test_rmse_norm': test_rmse_norm,     
-                'test_rmse_mm': test_rmse_mm,          
-                'test_mae_norm': test_mae_norm,     
-                'test_mae_mm': test_mae_mm,          
-            }
-            all_results.append(trial_results_data)
-
-            df_trial = pd.DataFrame([trial_results_data])
-            df_trial.to_csv(os.path.join(trial_log_dir, 'metrics.log'), index=False)
-
-            if current_val_loss < best_val_loss:
-                print(f"*** New best validation loss found: {current_val_loss:.6f} (improvement from {best_val_loss:.6f}) ***")
-                best_val_loss = current_val_loss
-                best_params = current_params
-
-    # --- End of Hyperparameter Loop ---
-
-    print("\n--- Hyperparameter Search Complete ---")
-
-    all_results_df = pd.DataFrame(all_results)
-    all_results_df.sort_values(by='val_loss', inplace=True)
-    summary_path = os.path.join(log_dir, 'hyperparameter_summary.log')
-    all_results_df.to_csv(summary_path, index=False)
-
-    print(f"\nSummary of all trials saved to: {summary_path}")
-    print("\nBest parameters found based on validation loss:")
-    print(best_params)
-    print(f"Best validation loss achieved: {best_val_loss:.6f}")
+    print("\n--- Model Training Complete for Trial ---")
 
 if __name__ == '__main__':
     import argparse
