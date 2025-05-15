@@ -102,7 +102,9 @@ def main(log_dir, epochs):
             id_to_idx = {pid: idx for idx, pid in enumerate(person_ids)}
 
             node_features = node_df[["center_x", "center_y", "pred"]].values.astype(np.float32)
-            targets = pd.get_dummies(node_df["target"])
+            targets = pd.Categorical(node_df["target"], categories=[0,1,2])
+            targets = pd.get_dummies(targets)
+
             edge_index = edge_df.replace({"source": id_to_idx, "target": id_to_idx}).to_numpy()
             processed_graphs.append({
                 "node_features": node_features,
@@ -116,29 +118,8 @@ def main(log_dir, epochs):
     processed_validation_graphs = process_graphs(validation_node_data, validation_edge_data)
     processed_test_graphs = process_graphs(test_node_data, test_edge_data)
 
-    overall_min_coord = np.inf
-    overall_max_coord = -np.inf
-    found_data = False
-    for graph in processed_train_graphs:
-        if graph['node_features'].size > 0:
-            min_features = np.min(graph['node_features'])
-            max_features = np.max(graph['node_features'])
-            overall_min_coord = min(overall_min_coord, min_features)
-            overall_max_coord = max(overall_max_coord, max_features)
-            found_data = True
-
-        if graph['targets'].size > 0:
-            valid_targets_mask = ~np.isnan(graph['targets'])
-            if np.any(valid_targets_mask):
-                valid_target_values = graph['targets'][valid_targets_mask]
-                min_targets = np.min(valid_target_values)
-                max_targets = np.max(valid_target_values)
-                overall_min_coord = min(overall_min_coord, min_targets)
-                overall_max_coord = max(overall_max_coord, max_targets)
-                found_data = True
-
-    min_coord = overall_min_coord
-    max_coord = overall_max_coord
+    min_coord = 500
+    max_coord = 0
     coord_range = max_coord - min_coord
 
     epsilon = 1e-7
@@ -150,9 +131,7 @@ def main(log_dir, epochs):
     
     def normalize_graphs(graphs):
         for graph in graphs:
-            graph['node_features'] = normalize_coords(graph['node_features'])
-            valid_targets_mask = ~np.isnan(graph['targets'])
-            graph['targets'][valid_targets_mask] = normalize_coords(graph['targets'][valid_targets_mask])
+            graph['node_features'][1:2] = normalize_coords(graph['node_features'][1:2])
         return graphs
     
     processed_train_graphs = normalize_graphs(processed_train_graphs)
@@ -179,7 +158,7 @@ def main(log_dir, epochs):
                 }
 
         output_signature = {
-            "node_features": tf.TensorSpec(shape=(None, 3), dtype=tf.int32),
+            "node_features": tf.TensorSpec(shape=(None, 3), dtype=tf.float32),
             "edge_index": tf.TensorSpec(shape=(None, 2), dtype=tf.int32),
             "targets": tf.TensorSpec(shape=(None, 3), dtype=tf.int32)
         }
@@ -359,7 +338,7 @@ def main(log_dir, epochs):
             for attention_layer in self.attention_layers:
                 x = attention_layer([x, edges]) + x
             outputs = self.output_layer(x)
-            outputs = node_states[:,:2]
+
             return tf.nn.softmax(outputs)
 
         def train_step(self, data):
@@ -428,9 +407,7 @@ def main(log_dir, epochs):
 
     loss_fn = keras.losses.CategoricalCrossentropy()
     optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
-    metrics = [keras.metrics.F1Score(), 
-               keras.metrics.MatthewsCorrelationCoefficient(), 
-               keras.metrics.IoU(),
+    metrics = [keras.metrics.IoU(3, [0,1,2]),
                keras.metrics.Recall()] 
 
     early_stopping = keras.callbacks.EarlyStopping(
@@ -463,7 +440,7 @@ def main(log_dir, epochs):
         validation_data=validation_dataset.map(lambda x: (( x["node_features"], x["edge_index"] ), x['targets']) ),
         epochs=epochs,
         callbacks=callbacks,
-        verbose=2,
+        verbose=1,
     )
 
     print("\n--- Model Training Complete for Trial ---")
