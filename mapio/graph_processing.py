@@ -1,0 +1,42 @@
+import cv2
+import numpy as np
+from scipy.ndimage import center_of_mass
+from skimage.segmentation import watershed
+from skimage import feature
+
+def image_to_graph(image):
+    kernel = np.ones((3, 3), np.uint8)
+    dia_target = cv2.dilate(image.astype(np.uint8), kernel, iterations=1).astype(np.bool)
+
+    canny_gauss_skel_thresh = feature.canny(dia_target, sigma=2)
+    ws = watershed(canny_gauss_skel_thresh, markers=4800)
+
+    ws_alpha = (ws + 1) * (image != 0)
+
+    labels = np.unique(ws_alpha)
+    labels = labels[labels != 0]
+
+    label_mapping = {old_label: new_label for new_label, old_label in enumerate(labels, start=1)}
+
+    ws_alpha_reindex = np.copy(ws_alpha)
+    for old_label, new_label in label_mapping.items():
+        ws_alpha_reindex[ws_alpha == old_label] = new_label
+
+    labels_reindex = [label_mapping[label] for label in labels]
+
+    centers = center_of_mass(image != 0, ws_alpha_reindex, labels_reindex)
+    centers_int = np.round(centers).astype(int)
+    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int))
+
+    # dilated_ws = grey_dilation(ws_alpha, size=(3, 3))
+
+    label_pairs = set()
+    for shift in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+        shifted = np.roll(ws_alpha_reindex, shift, axis=(0,1))
+        mask = (ws_alpha_reindex != shifted) & (ws_alpha_reindex != 0) & (shifted != 0)
+        pairs = np.stack([ws_alpha_reindex[mask], shifted[mask]], axis=1)
+        for a, b in pairs:
+            if a != b:
+                label_pairs.add(tuple(sorted((a-1, b-1))))
+    
+    return np.array(labeled_centers, dtype=np.int32), np.array(pairs, dtype=np.int32)

@@ -17,7 +17,7 @@ echo "started task with timestamp :: ${TIMESTAMP}"
 
 # Run your python script and redirect output to a file within the job's log directory
 START=$(date +%s)
-python maso/unet.py --logdir "$JOB_LOG_DIR" > "${JOB_LOG_DIR}/output_${TIMESTAMP}.txt"
+python mapio/unet.py --logdir "$JOB_LOG_DIR" > "${JOB_LOG_DIR}/output_${TIMESTAMP}.txt"
 END=$(date +%s)
 RUNTIME=$((END - START))
 
