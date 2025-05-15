@@ -23,7 +23,7 @@ def main(logdir, epochs=42, batch_size=42):
 
     # instantiate the model
     test_model = UNet().to(device)
-    best_model_path = 'logs/unet/ID_4831/unet_model_ckpt.pth'
+    best_model_path = 'logs/m1/20250515_134712/unet_model_ckpt.pth'
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
 
@@ -34,25 +34,23 @@ def main(logdir, epochs=42, batch_size=42):
     # iterate over the train dataset
     print('Iterating over the train dataset...')
     for i, (batch_images, batch_labels) in enumerate(train_loader):
-        images, padding = add_padding(batch_images)
-        labels_padded, _ = add_padding(batch_labels)
-        images = images.to(device)
-        squeezed_labels_padded = labels_padded.squeeze(1).long().to(device)
+        # images, padding = test_model.add_padding(batch_images)
+        batch_images = batch_images.to(device)
+        labels = batch_labels.squeeze(1).long().to(device)
 
         # make predictions
         with torch.no_grad():
-            pred = test_model(images)
-            # get maximum value
+            pred = test_model.predict(batch_images)
             pred = torch.argmax(pred, dim=1)
-            # remove padding
-            pred = remove_padding(pred, padding)
+            print(pred[0,0])
             print('Predictions shape:', pred.shape, flush=True)
+            exit()
 
         # save the predictions
-        for j in range(pred.shape[0]):
-            pred_image = pred[j].cpu().numpy().astype('uint8')
-            pred_pil = Image.fromarray(pred_image, mode='L')
-            pred_pil.save(os.path.join(pred_dir, f'pred_{i * batch_size + j}.png'))
+        # for j in range(pred.shape[0]):
+        #     pred_image = pred[j].cpu().numpy().astype('uint8')
+        #     pred_pil = Image.fromarray(pred_image, mode='L')
+        #     pred_pil.save(os.path.join(pred_dir, f'pred_{i * batch_size + j}.png'))
 
     print('All predictions saved to', pred_dir)
 

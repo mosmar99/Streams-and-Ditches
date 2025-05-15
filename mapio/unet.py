@@ -80,6 +80,7 @@ class MinCheckpoint():
             print(f" -- Updated Checkpoint: {self.min_loss} > {loss}", flush=True)
             self.min_loss = loss
             torch.save(model.state_dict(), os.path.join(self.logdir, 'unet_model_ckpt.pth'))
+            
 
 class UNet(nn.Module):
     def __init__(self):
@@ -172,6 +173,14 @@ class UNet(nn.Module):
             # add some reg. to the loss
             outputs_cropped = model.predict(images)
             squeezed_labels = labels.squeeze(1).long().to(device) # B, C, H, W -> B, H, W
+
+            # print("Labels, class:", squeezed_labels.shape)
+            # one_hot_encoded = torch.zeros((8, 3, 500, 500), dtype=torch.int)
+            # one_hot_encoded[torch.arange(8).unsqueeze(1).unsqueeze(2), images] = 1
+            # print("Labels, onehot:",one_hot_encoded.shape)
+            # permuted_one_hot_labels = nn.functional.one_hot(squeezed_labels).permute(0,3,1,2)
+            # print("Labels, onehot_permute:",permuted_one_hot_labels.shape)
+
             loss = criterion(outputs_cropped, squeezed_labels) + 0.01 * torch.mean(outputs_cropped ** 2)
 
             optimizer.zero_grad()
@@ -323,7 +332,7 @@ class UNet(nn.Module):
         for epoch in range(num_epochs):
             start_time = time.time()
             self._train(train_loader, num_epochs, criterion, optimizer, epoch, total_steps)
-            self._validate(val_loader, num_epochs, criterion)
+            self._validate(val_loader, criterion, num_epochs)
             end_time = time.time()
             print(f" -- Time: {end_time - start_time:.2f} seconds", flush=True)
 
@@ -466,6 +475,42 @@ def load_and_process_data():
 
     return train_loader, test_loader, val_loader, train_dataset, test_dataset, val_dataset
 
+class WeightedMSE(nn.Module):
+
+    '''Weighted mean square error loss'''
+
+    def __init__(self, weights=None, device='cuda'):
+        '''Setup loss
+
+        Parameters
+        ----------
+        weights : List of class weights, optional
+        device : Select device to run on, optional
+        '''
+        nn.Module.__init__(self)
+        self._weights = torch.from_numpy(weights).to(device)
+
+    def forward(self, inputs, targets):
+        '''Compute loss for given inputs and targets
+
+        Parameters
+        ----------
+        inputs : Predicted output
+        targets : Target output
+
+        Returns
+        -------
+        Weighted MSE
+
+        '''
+        if self._weights is not None:
+            mse = ((inputs - targets) ** 2).mean(dim=(0, 2, 3))
+            mse = (self._weights * mse).sum()
+        else:
+            mse = ((inputs - targets) ** 2).mean()
+
+        return mse
+    
 if __name__ == "__main__":
 
     begin_time = time.time()
@@ -474,7 +519,7 @@ if __name__ == "__main__":
 
     model = UNet().to(device)
 
-    criterion = nn.WeightedMSELoss()
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.05)
 
     model.fit(train_loader, val_loader, num_epochs, criterion, optimizer)
