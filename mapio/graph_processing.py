@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import time
 
 def fill_small_segments(multi_seg_mask, min_size=10):
-    # kernel = np.array([[0,1,0],
-    #                    [1,1,1],
-    #                    [0,1,0]], dtype=np.int8)
-    kernel = np.ones((2,2), dtype=np.uint8)
+    kernel = np.array([[0,1,0],
+                       [1,1,1],
+                       [0,1,0]], dtype=np.uint8)
+    # kernel = np.ones((2,2), dtype=np.uint8)
     
     for segment in np.unique(multi_seg_mask):
         if segment == 0:
