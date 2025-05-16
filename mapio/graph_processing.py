@@ -4,12 +4,15 @@ from scipy.ndimage import center_of_mass
 from skimage.segmentation import watershed
 from skimage.morphology import remove_small_holes, skeletonize
 from skimage import feature
+import matplotlib.pyplot as plt
+import time
 
 def fill_small_segments(multi_seg_mask, min_size=10):
     # kernel = np.array([[0,1,0],
     #                    [1,1,1],
     #                    [0,1,0]], dtype=np.int8)
     kernel = np.ones((2,2), dtype=np.uint8)
+    
     for segment in np.unique(multi_seg_mask):
         if segment == 0:
             continue
@@ -55,21 +58,18 @@ def extract_mean_probabilities(multi_seg_mask, target):
 
     return np.array(labels)
 
-def extract_deep_probabilities(multi_seg_mask, coords, target):
+def extract_deep_features(coords, target):
+    pad_size = 12//2
+    index_conversion = 512//target.shape[1]
     labels = []
-
-    for segment in np.unique(multi_seg_mask):
-        if segment == 0:
-            continue
-        seg_mask = segment == multi_seg_mask
-
-        target_masked = target[:, seg_mask]
-        prob_means = target_masked.mean(axis=1)
-        labels.append(prob_means)
-
+    for coord in coords:
+        x, y = coord[0], coord[1]
+        x, y = (x+pad_size)//index_conversion, (y+pad_size)//index_conversion
+        segment_features = target[:,y,x]
+        labels.append(segment_features)
     return np.array(labels)
 
-def image_to_graph(image_preds, image_probs, label_image, deep_feats):
+def image_to_graph(image_preds, image_probs, label_image, feature_map):
     canny = np.zeros_like(image_preds)
     for label in np.unique(image_preds):
         if label == 0:
@@ -84,7 +84,6 @@ def image_to_graph(image_preds, image_probs, label_image, deep_feats):
         dia_target = cv2.dilate(label_mask.astype(np.uint8), kernel, iterations=1).astype(np.bool)
 
         canny += feature.canny(dia_target, sigma=2)
-
     canny = (canny != 0)
     canny = remove_small_holes(canny, area_threshold=64)
     canny = skeletonize(canny)
@@ -110,7 +109,8 @@ def image_to_graph(image_preds, image_probs, label_image, deep_feats):
 
     predicted_label = extract_mean_probabilities(ws_alpha_reindex, image_probs)
     target_label = extract_majority_labels(ws_alpha_reindex, label_image)
-    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, target_label))
+    deep_features = extract_deep_features(centers_int, feature_map)
+    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, deep_features, target_label))
 
     # dilated_ws = grey_dilation(ws_alpha, size=(3, 3))
 

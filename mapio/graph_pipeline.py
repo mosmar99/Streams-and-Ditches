@@ -8,6 +8,7 @@ from unet import UNet, UNetDataset
 from torch.utils.data import DataLoader
 import graph_processing
 import matplotlib.pyplot as plt
+import time
 
 def read_file_list(file_path):
     with open(file_path, 'r') as f:
@@ -60,10 +61,12 @@ def main(logdir, epochs=42, batch_size=42):
         pred_cpu = pred.cpu().numpy()
         argmax_pred_cpu = argmax_pred.cpu().numpy()
         labes_cpu = labels.cpu().numpy()
+
         graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i], pred_cpu[i], labes_cpu[i], intermediate["x9"][i]) for i in range(pred_cpu.shape[0])]
-        exit()
+
         for j, (nodes, connections) in enumerate(graphs):
-            node_fmt = ('%d', '%d', '%d', '%.4f', '%.4f', '%.4f', '%d')
+            deep_fmt = ('%.4f',)*512
+            node_fmt = ('%d', '%d', '%d', '%.4f', '%.4f', '%.4f', *deep_fmt, '%d')
             if nodes.shape[0] != 0:
                 np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.nodes"), nodes, delimiter=",", fmt=node_fmt)
                 np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.edges"), connections, delimiter=",", fmt='%d')    
