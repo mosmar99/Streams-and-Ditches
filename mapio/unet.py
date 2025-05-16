@@ -134,6 +134,9 @@ class UNet(nn.Module):
         outputs = self(images)
         outputs_cropped = remove_padding(outputs, padding)
         return outputs_cropped
+    
+    def predict_softmax(self, images):
+        return nn.functional.softmax(self.predict(images), dim=0)
 
     def forward(self, image):
         x1 = self.down_conv1(image)

@@ -7,6 +7,7 @@ from PIL import Image
 from unet import UNet, UNetDataset
 from torch.utils.data import DataLoader
 import graph_processing
+import matplotlib.pyplot as plt
 
 def read_file_list(file_path):
     with open(file_path, 'r') as f:
@@ -30,6 +31,14 @@ def main(logdir, epochs=42, batch_size=42):
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
 
+    intermediate = {}
+    def get_features(name):
+        def hook(model, input, output):
+            intermediate[name] = output.detach().cpu().numpy()
+        return hook
+        
+    test_model.down_conv5[-1].register_forward_hook(get_features("x9"))
+
     # create a directory to save the predictions
     pred_dir = os.path.join(logdir, 'predictions')
     graph_dir = os.path.join(logdir, 'graphs')
@@ -45,16 +54,19 @@ def main(logdir, epochs=42, batch_size=42):
 
         # make predictions
         with torch.no_grad():
-            pred = test_model.predict(batch_images)
-            pred = torch.argmax(pred, dim=1)
+            pred = test_model.predict_softmax(batch_images)
+            argmax_pred = torch.argmax(pred, dim=1)
 
         pred_cpu = pred.cpu().numpy()
+        argmax_pred_cpu = argmax_pred.cpu().numpy()
         labes_cpu = labels.cpu().numpy()
-        graphs = [graph_processing.image_to_graph(pred_cpu[i], labes_cpu[i]) for i in range(pred_cpu.shape[0])]
-
+        graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i], pred_cpu[i], labes_cpu[i], intermediate["x9"][i]) for i in range(pred_cpu.shape[0])]
+        exit()
         for j, (nodes, connections) in enumerate(graphs):
-            np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.nodes"), nodes, delimiter=",", fmt="%d")
-            np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.edges"), connections, delimiter=",", fmt="%d")
+            node_fmt = ('%d', '%d', '%d', '%.4f', '%.4f', '%.4f', '%d')
+            if nodes.shape[0] != 0:
+                np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.nodes"), nodes, delimiter=",", fmt=node_fmt)
+                np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.edges"), connections, delimiter=",", fmt='%d')    
 
         # save the predictions
         # for j in range(pred.shape[0]):

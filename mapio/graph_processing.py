@@ -18,12 +18,41 @@ def extract_majority_labels(multi_seg_mask, target):
         labels.append(unique[majority_index])
     return np.array(labels)
 
-def image_to_graph(image, label_image):
-    canny = np.zeros_like(image)
-    for label in np.unique(image):
+def extract_mean_probabilities(multi_seg_mask, target):
+    labels = []
+
+    for segment in np.unique(multi_seg_mask):
+        if segment == 0:
+            continue
+        seg_mask = segment == multi_seg_mask
+        print(np.sum(seg_mask))
+
+        target_masked = target[:, seg_mask]
+        prob_means = target_masked.mean(axis=1)
+        labels.append(prob_means)
+
+    return np.array(labels)
+
+def extract_deep_probabilities(multi_seg_mask, coords, target):
+    labels = []
+
+    for segment in np.unique(multi_seg_mask):
+        if segment == 0:
+            continue
+        seg_mask = segment == multi_seg_mask
+
+        target_masked = target[:, seg_mask]
+        prob_means = target_masked.mean(axis=1)
+        labels.append(prob_means)
+
+    return np.array(labels)
+
+def image_to_graph(image_preds, image_probs, label_image, deep_feats):
+    canny = np.zeros_like(image_preds)
+    for label in np.unique(image_preds):
         if label == 0:
             continue
-        label_mask = image == label
+        label_mask = image_preds == label
 
         # kernel = np.ones((3, 3), np.uint8)
         kernel = np.array([[0,1,0],
@@ -40,7 +69,7 @@ def image_to_graph(image, label_image):
 
     ws = watershed(canny, markers=4800)
 
-    ws_alpha = (ws + 1) * (image != 0)
+    ws_alpha = (ws + 1) * (image_preds != 0)
 
     labels = np.unique(ws_alpha)
     labels = labels[labels != 0]
@@ -53,10 +82,10 @@ def image_to_graph(image, label_image):
 
     labels_reindex = [label_mapping[label] for label in labels]
 
-    centers = center_of_mass(image != 0, ws_alpha_reindex, labels_reindex)
+    centers = center_of_mass(image_preds != 0, ws_alpha_reindex, labels_reindex)
     centers_int = np.round(centers).astype(int)
 
-    predicted_label = extract_majority_labels(ws_alpha_reindex, image)
+    predicted_label = extract_mean_probabilities(ws_alpha_reindex, image_probs)
     target_label = extract_majority_labels(ws_alpha_reindex, label_image)
     labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, target_label))
 
@@ -71,4 +100,4 @@ def image_to_graph(image, label_image):
             if a != b:
                 label_pairs.add(tuple(sorted((a-1, b-1))))
     
-    return np.array(labeled_centers, dtype=np.int32), np.array(list(label_pairs), dtype=np.int32)
+    return np.array(labeled_centers, dtype=np.float32), np.array(list(label_pairs), dtype=np.int32)
