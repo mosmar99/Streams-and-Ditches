@@ -5,6 +5,29 @@ from skimage.segmentation import watershed
 from skimage.morphology import remove_small_holes, skeletonize
 from skimage import feature
 
+def fill_small_segments(multi_seg_mask, min_size=10):
+    # kernel = np.array([[0,1,0],
+    #                    [1,1,1],
+    #                    [0,1,0]], dtype=np.int8)
+    kernel = np.ones((2,2), dtype=np.uint8)
+    for segment in np.unique(multi_seg_mask):
+        if segment == 0:
+            continue
+        seg_mask = segment == multi_seg_mask
+        pixels_in_segment = np.sum(seg_mask)
+        if pixels_in_segment < min_size:
+            dialated_seg_mask = cv2.dilate(seg_mask.astype(np.uint8), kernel, iterations=1).astype(np.bool8)
+            neighbors = np.logical_xor(seg_mask, dialated_seg_mask)
+            unique, counts = np.unique(multi_seg_mask[neighbors], return_counts=True)
+
+            if len(unique) > 1:
+                unique_bg_mask = unique != 0
+                unique = unique[unique_bg_mask]
+                counts = counts[unique_bg_mask]
+            
+            multi_seg_mask[seg_mask] = unique[np.argmax(counts)]
+    return multi_seg_mask
+            
 def extract_majority_labels(multi_seg_mask, target):
     labels = []
     for segment in np.unique(multi_seg_mask):
@@ -25,7 +48,6 @@ def extract_mean_probabilities(multi_seg_mask, target):
         if segment == 0:
             continue
         seg_mask = segment == multi_seg_mask
-        print(np.sum(seg_mask))
 
         target_masked = target[:, seg_mask]
         prob_means = target_masked.mean(axis=1)
@@ -70,6 +92,7 @@ def image_to_graph(image_preds, image_probs, label_image, deep_feats):
     ws = watershed(canny, markers=4800)
 
     ws_alpha = (ws + 1) * (image_preds != 0)
+    ws_alpha = fill_small_segments(ws_alpha)
 
     labels = np.unique(ws_alpha)
     labels = labels[labels != 0]
