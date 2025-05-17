@@ -20,7 +20,7 @@ def calculate_angle(x_vec, y_vec):
     return angle
 
 def main(log_dir, epochs):
-    data_dir = './logs/m1/test_gat2/graphs'
+    data_dir = './logs/m1/test_gat3/graphs'
     files = os.listdir(data_dir)
     node_files = sorted([f for f in files if f.endswith('.nodes')])
     edge_files = sorted([f for f in files if f.endswith('.edges')])
@@ -37,7 +37,8 @@ def main(log_dir, epochs):
         base_name = edge_file.replace('.edges', '')
         combined_filenames.append((node_dict[base_name], edge_file))
 
-    node_names = ["node_id", "center_x", "center_y", "pred", "target"]
+    deep_feats = [f"deep_{i}" for i in range(512)]
+    node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *deep_feats, "target"]
     edge_names = ["target", "source"]
 
     # --- Load TRAIN/TEST Data ---
@@ -101,7 +102,7 @@ def main(log_dir, epochs):
             person_ids = node_df["node_id"].tolist()
             id_to_idx = {pid: idx for idx, pid in enumerate(person_ids)}
 
-            node_features = node_df[["center_x", "center_y", "pred"]].values.astype(np.float32)
+            node_features = node_df[["prob_0", "prob_1", "prob_2", *deep_feats, "target"]].values.astype(np.float32)
             targets = pd.Categorical(node_df["target"], categories=[0,1,2])
             targets = pd.get_dummies(targets)
 
@@ -158,7 +159,7 @@ def main(log_dir, epochs):
                 }
 
         output_signature = {
-            "node_features": tf.TensorSpec(shape=(None, 3), dtype=tf.float32),
+            "node_features": tf.TensorSpec(shape=(None, 516), dtype=tf.float32),
             "edge_index": tf.TensorSpec(shape=(None, 2), dtype=tf.int32),
             "targets": tf.TensorSpec(shape=(None, 3), dtype=tf.int32)
         }
