@@ -205,9 +205,7 @@ def main(log_dir, epochs):
     
     def normalize_graphs(graphs):
         for graph in graphs:
-            print(graph[0][0][:,1:3])
-            print(normalize_coords(graph[0][0][:,1:3]))
-            graph[0][0][:,1:3] = normalize_coords(graph[0][0][:,1:3])
+            graph[0][0][:,:2] = normalize_coords(graph[0][0][:,:2])
         return graphs
     
     processed_train_graphs = normalize_graphs(processed_train_graphs)
@@ -456,7 +454,7 @@ def main(log_dir, epochs):
     # Fixed parameters
     NUM_LAYERS = 5
     OUTPUT_DIM = 3
-    LEARNING_RATE = 1e-3
+    LEARNING_RATE = 1e-4
     ATTENTION_TYPE = "std"
 
     print("\n--- Starting Hyperparameter Search ---")

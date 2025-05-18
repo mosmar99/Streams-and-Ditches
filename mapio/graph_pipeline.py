@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 import graph_processing
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA, IncrementalPCA
+import tifffile
 import time
 import tqdm
 
@@ -126,8 +127,9 @@ def main(logdir, epochs=42, batch_size=42):
         pred_cpu = pred.cpu().numpy()
         argmax_pred_cpu = argmax_pred.cpu().numpy()
         labes_cpu = labels.cpu().numpy()
+        batch_images_cpu = batch_images.cpu().numpy()
         # deep_pca = apply_pca_transform(pca, intermediate["x9"])
-        graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i], pred_cpu[i], labes_cpu[i], intermediate["x9"][i]) for i in range(pred_cpu.shape[0])]
+        graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i], pred_cpu[i], labes_cpu[i], intermediate["x9"][i], batch_images_cpu[i]) for i in range(pred_cpu.shape[0])]
 
         for j, (nodes, connections, node_mask) in enumerate(graphs):
             # print(nodes[:,:2].shape)
