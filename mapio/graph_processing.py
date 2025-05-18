@@ -123,4 +123,13 @@ def image_to_graph(image_preds, image_probs, label_image, feature_map):
             if a != b:
                 label_pairs.add(tuple(sorted((a-1, b-1))))
     
-    return np.array(labeled_centers, dtype=np.float32), np.array(list(label_pairs), dtype=np.int32)
+    return np.array(labeled_centers, dtype=np.float32), np.array(list(label_pairs), dtype=np.int32), ws_alpha_reindex
+
+def graph_to_image(node_predictions, node_mask):
+    output = np.zeros_like(node_mask)
+    for node_id in np.unique(node_mask):
+        if node_id == 0:
+            continue
+        seg_mask = node_id == node_mask
+        output[seg_mask] = node_predictions[node_id-1]
+    return output

@@ -19,8 +19,68 @@ def calculate_angle(x_vec, y_vec):
     angle = np.arctan2(y_vec, x_vec) * (25000 / np.pi)
     return angle
 
+def join_graph_dfs(graph_dfs):
+    node_dfs = []
+    edge_dfs = []
+    start_index = 0
+    
+    for i, (node_df, edge_df) in enumerate(graph_dfs):
+        node_df = node_df.reset_index(drop=True)
+        person_lookup = node_df["node_id"].reset_index().set_index("node_id") + start_index
+
+        if not person_lookup.empty:
+            start_index = person_lookup['index'].max() + 1
+
+        node_df["graph_id"] = i
+        node_df["node_id"] = person_lookup.loc[node_df["node_id"]].reset_index()["index"]
+
+        edge_df["target"] = person_lookup.reindex(edge_df["target"]).reset_index()["index"]
+        edge_df["source"] = person_lookup.reindex(edge_df["source"]).reset_index()["index"]
+
+        edge_df = edge_df.dropna().astype(int)
+
+        node_dfs.append(node_df)
+        edge_dfs.append(edge_df)
+
+    nodes_df = pd.concat(node_dfs).reset_index(drop=True)
+    edges_df = pd.concat(edge_dfs).reset_index(drop=True)
+    return nodes_df, edges_df
+
+def batch_node_data(node_data, edge_data, BATCH_SIZE):
+    n_graphs = len(node_data)
+    n_batches = n_graphs // BATCH_SIZE
+    joined_node_data = []
+    joined_edge_data = []
+    for i in range(n_batches):
+        if i == n_batches-1:
+            node_dfs = node_data[i*BATCH_SIZE:]
+            edge_dfs = edge_data[i*BATCH_SIZE:]
+        else:
+            node_dfs = node_data[i*BATCH_SIZE: (i*BATCH_SIZE) + BATCH_SIZE]
+            edge_dfs = edge_data[i*BATCH_SIZE: (i*BATCH_SIZE) + BATCH_SIZE]
+
+        joined_nodes, joined_edges = join_graph_dfs(zip(node_dfs, edge_dfs))
+        joined_node_data.append(joined_nodes)
+        joined_edge_data.append(joined_edges)
+    
+    return joined_node_data, joined_edge_data
+
+class PrecisionCSVLogger(tf.keras.callbacks.CSVLogger):
+    def __init__(self, filename, precision=4, **kwargs):
+        super().__init__(filename, **kwargs)
+        self.precision = precision
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        # Format floats to desired precision
+        formatted_logs = {
+            k: f"{v:.{self.precision}f}" if isinstance(v, (float, np.float32, np.float64)) else v
+            for k, v in logs.items()
+        }
+        super().on_epoch_end(epoch, formatted_logs)
+
 def main(log_dir, epochs):
-    data_dir = './logs/m1/test_gat3/graphs'
+    data_dir = './logs/m1/test_gat4/graphs'
     files = os.listdir(data_dir)
     node_files = sorted([f for f in files if f.endswith('.nodes')])
     edge_files = sorted([f for f in files if f.endswith('.edges')])
@@ -37,7 +97,7 @@ def main(log_dir, epochs):
         base_name = edge_file.replace('.edges', '')
         combined_filenames.append((node_dict[base_name], edge_file))
 
-    deep_feats = [f"deep_{i}" for i in range(512)]
+    deep_feats = [f"deep_{i}" for i in range(64)]
     node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *deep_feats, "target"]
     edge_names = ["target", "source"]
 
@@ -58,6 +118,9 @@ def main(log_dir, epochs):
 
         all_node_data.append(node_df)
         all_edge_data.append(edge_df)
+    
+    BATCH_SIZE = 2
+    all_node_data, all_edge_data = batch_node_data(all_node_data, all_edge_data, BATCH_SIZE)
 
     TRAIN_SPLIT = 0.70
     VALIDATION_SPLIT = 0.10
@@ -99,45 +162,38 @@ def main(log_dir, epochs):
     def process_graphs(node_data, edge_data):
         processed_graphs = []
         for (node_df, edge_df) in list(zip(node_data, edge_data)):
-            person_ids = node_df["node_id"].tolist()
-            id_to_idx = {pid: idx for idx, pid in enumerate(person_ids)}
-
-            node_features = node_df[["prob_0", "prob_1", "prob_2", *deep_feats, "target"]].values.astype(np.float32)
+            
+            node_features = node_df[[*deep_feats]].values.astype(np.float32)
             targets = pd.Categorical(node_df["target"], categories=[0,1,2])
             targets = pd.get_dummies(targets)
+            graph_ids = node_df["graph_id"].values.astype(np.int32)
 
-            edge_index = edge_df.replace({"source": id_to_idx, "target": id_to_idx}).to_numpy()
-            processed_graphs.append({
-                "node_features": node_features,
-                "edge_index": edge_index,
-                "targets": targets,
-                "original_person_ids": person_ids
-            })
+            processed_graphs.append(((node_features, edge_df, graph_ids), targets))
         return processed_graphs
 
     processed_train_graphs = process_graphs(train_node_data, train_edge_data)
     processed_validation_graphs = process_graphs(validation_node_data, validation_edge_data)
     processed_test_graphs = process_graphs(test_node_data, test_edge_data)
 
-    min_coord = 500
-    max_coord = 0
-    coord_range = max_coord - min_coord
+    # min_coord = 500
+    # max_coord = 0
+    # coord_range = max_coord - min_coord
 
-    epsilon = 1e-7
-    if coord_range < epsilon:
-        coord_range = epsilon
+    # epsilon = 1e-7
+    # if coord_range < epsilon:
+    #     coord_range = epsilon
 
-    def normalize_coords(data):
-        return (data - min_coord) / coord_range
+    # def normalize_coords(data):
+    #     return (data - min_coord) / coord_range
     
-    def normalize_graphs(graphs):
-        for graph in graphs:
-            graph['node_features'][1:2] = normalize_coords(graph['node_features'][1:2])
-        return graphs
+    # def normalize_graphs(graphs):
+    #     for graph in graphs:
+    #         graph[0][0][1:2] = normalize_coords(graph[0][0][1:2])
+    #     return graphs
     
-    processed_train_graphs = normalize_graphs(processed_train_graphs)
-    processed_validation_graphs = normalize_graphs(processed_validation_graphs)
-    processed_test_graphs = normalize_graphs(processed_test_graphs)
+    # processed_train_graphs = normalize_graphs(processed_train_graphs)
+    # processed_validation_graphs = normalize_graphs(processed_validation_graphs)
+    # processed_test_graphs = normalize_graphs(processed_test_graphs)
 
     print("\n--- Graphs Processed ---")
     print(f"Train graphs: {len(processed_train_graphs)}")
@@ -152,45 +208,42 @@ def main(log_dir, epochs):
         """
         def generator():
             for graph in graphs:
-                yield {
-                    "node_features": graph["node_features"],
-                    "edge_index": graph["edge_index"],
-                    "targets": graph["targets"]  
-                }
+                yield graph
 
-        output_signature = {
-            "node_features": tf.TensorSpec(shape=(None, 516), dtype=tf.float32),
-            "edge_index": tf.TensorSpec(shape=(None, 2), dtype=tf.int32),
-            "targets": tf.TensorSpec(shape=(None, 3), dtype=tf.int32)
-        }
+        output_signature = ((tf.TensorSpec(shape=(None, 64), dtype=tf.float32),
+                             tf.TensorSpec(shape=(None, 2), dtype=tf.int32),
+                             tf.TensorSpec(shape=(None,), dtype=tf.int32)
+                            ),
+                            tf.TensorSpec(shape=(None, 3), dtype=tf.int32))
 
         dataset = tf.data.Dataset.from_generator(generator, output_signature=output_signature)
+        dataset = dataset.prefetch(tf.data.AUTOTUNE)
         return dataset
 
     train_dataset = create_tf_dataset(processed_train_graphs)
     validation_dataset = create_tf_dataset(processed_validation_graphs)
     test_dataset = create_tf_dataset(processed_test_graphs)
 
-    # Example: Inspect the first batch in the dataset
-    for batch in train_dataset.take(1):
-        print("\nSample TensorFlow Train dataset batch:")
-        print(f"Node features shape: {batch['node_features'].shape}")
-        print(f"Node features shape: {batch['edge_index'].shape}")
-        print(f"Targets shape: {batch['targets'].shape}")
+    # # Example: Inspect the first batch in the dataset
+    # for batch in train_dataset.take(1):
+    #     print("\nSample TensorFlow Train dataset batch:")
+    #     print(f"Node features shape: {batch['node_features'].shape}")
+    #     print(f"Node features shape: {batch['edge_index'].shape}")
+    #     print(f"Targets shape: {batch['targets'].shape}")
 
-    for batch in validation_dataset.take(1):
-        print("\nSample TensorFlow Validation dataset batch:")
-        print(f"Node features shape: {batch['node_features'].shape}")
-        print(f"Node features shape: {batch['edge_index'].shape}")
-        print(f"Targets shape: {batch['targets'].shape}")
+    # for batch in validation_dataset.take(1):
+    #     print("\nSample TensorFlow Validation dataset batch:")
+    #     print(f"Node features shape: {batch['node_features'].shape}")
+    #     print(f"Node features shape: {batch['edge_index'].shape}")
+    #     print(f"Targets shape: {batch['targets'].shape}")
 
-    for batch in test_dataset.take(1):
-        print("\nSample TensorFlow Test dataset batch:")
-        print(f"Node features shape: {batch['node_features'].shape}")
-        print(f"Edge index shape: {batch['edge_index'].shape}")
-        print(f"Targets shape: {batch['targets'].shape}")
+    # for batch in test_dataset.take(1):
+    #     print("\nSample TensorFlow Test dataset batch:")
+    #     print(f"Node features shape: {batch['node_features'].shape}")
+    #     print(f"Edge index shape: {batch['edge_index'].shape}")
+    #     print(f"Targets shape: {batch['targets'].shape}")
 
-    print("\nTensorFlow dataset created and ready for GAT model training.")
+    # print("\nTensorFlow dataset created and ready for GAT model training.")
 
 
     class GraphAttention(layers.Layer):
@@ -343,7 +396,7 @@ def main(log_dir, epochs):
             return tf.nn.softmax(outputs)
 
         def train_step(self, data):
-            (features_data, edges_data), targets = data
+            (features_data, edges_data, *_), targets = data
 
             with tf.GradientTape() as tape:
                 # Forward pass
@@ -360,14 +413,14 @@ def main(log_dir, epochs):
             return {m.name: m.result() for m in self.metrics}
 
         def predict_step(self, data):
-            (features_data, edges_data), _ = data
+            (features_data, edges_data, *args), _ = data
             # Forward pass
             outputs = self([features_data, edges_data])
             # Compute probabilities
-            return outputs
+            return outputs, *args
 
         def test_step(self, data):
-            (features_data, edges_data), targets = data
+            (features_data, edges_data, *_), targets = data
             # Forward pass
             outputs = self([features_data, edges_data], training=False)
             # Compute loss
@@ -377,7 +430,7 @@ def main(log_dir, epochs):
             return {m.name: m.result() for m in self.metrics}
 
     # --- Hyperparameter Search Setup ---
-    hidden_units = 100
+    hidden_units = 200
     num_heads = 11
 
     # Fixed parameters
@@ -407,9 +460,12 @@ def main(log_dir, epochs):
     print(f"Logging trial results to: {trial_log_dir}")
 
     loss_fn = keras.losses.CategoricalCrossentropy()
-    optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE)
+    optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE, weight_decay=0.01)
     metrics = [keras.metrics.IoU(3, [0,1,2]),
-               keras.metrics.Recall()] 
+               keras.metrics.Recall(),
+               keras.metrics.Recall(class_id=0, name='recall_0'),
+               keras.metrics.Recall(class_id=1, name='recall_1'),
+               keras.metrics.Recall(class_id=2, name='recall_2')] 
 
     early_stopping = keras.callbacks.EarlyStopping(
         monitor="val_loss",
@@ -417,7 +473,7 @@ def main(log_dir, epochs):
         min_delta=1e-5,
         restore_best_weights=True, 
     )
-    csv_logger = tf.keras.callbacks.CSVLogger(os.path.join(trial_log_dir, 'training.log'))
+    csv_logger = PrecisionCSVLogger(os.path.join(trial_log_dir, 'training.log'), precision=4)
     callbacks = [csv_logger] 
 
     np.random.seed(NUMPY_SEED)
@@ -435,13 +491,15 @@ def main(log_dir, epochs):
     # Compile model
     gat_model.compile(loss=loss_fn, optimizer=optimizer, metrics=metrics)
 
+    class_weight = {0: 1, 1: 1, 2: 1}
     # Train the model
     history = gat_model.fit(
-        train_dataset.map(lambda x: (( x["node_features"], x["edge_index"] ), x['targets']) ),
-        validation_data=validation_dataset.map(lambda x: (( x["node_features"], x["edge_index"] ), x['targets']) ),
+        train_dataset,
+        validation_data=validation_dataset,
         epochs=epochs,
         callbacks=callbacks,
         verbose=1,
+        # class_weight=class_weight
     )
 
     print("\n--- Model Training Complete for Trial ---")
