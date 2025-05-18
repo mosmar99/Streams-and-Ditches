@@ -72,7 +72,7 @@ def extract_deep_features(coords, target):
         labels.append(segment_features)
     return np.array(labels)
 
-def image_to_graph(image_preds, image_probs, label_image, feature_map):
+def image_to_graph(image_preds, image_probs, label_image, feature_map, slope_image):
     canny = np.zeros_like(image_preds)
     for label in np.unique(image_preds):
         if label == 0:
@@ -112,8 +112,9 @@ def image_to_graph(image_preds, image_probs, label_image, feature_map):
 
     predicted_label = extract_mean_probabilities(ws_alpha_reindex, image_probs)
     target_label = extract_majority_labels(ws_alpha_reindex, label_image)
+    slope_stats = extract_slope_statistics(ws_alpha_reindex, slope_image)
     deep_features = extract_deep_features(centers_int, feature_map)
-    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, deep_features, target_label))
+    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, slope_stats, deep_features, target_label))
 
     # dilated_ws = grey_dilation(ws_alpha, size=(3, 3))
 
@@ -160,3 +161,27 @@ def plot_graph_edges(ax, nodes, edges):
 
         ax.plot([coord_a[1], coord_b[1]], [coord_a[0], coord_b[0]], 'k-', lw=0.3)
     return ax
+
+def extract_slope_statistics(multi_seg_mask, slope_image):
+    """Calculates min, mean, max slope for each segment."""
+    stats = []
+    unique_segment_ids = np.unique(multi_seg_mask)
+    unique_segment_ids = unique_segment_ids[unique_segment_ids != 0] 
+
+    for segment_id in unique_segment_ids:
+        # if segment_id == 0: continue
+
+        seg_mask = (multi_seg_mask == segment_id)
+        if np.any(seg_mask):
+            slope_values_in_segment = slope_image[seg_mask]
+            if slope_values_in_segment.size > 0:
+                stats.append([
+                    np.min(slope_values_in_segment),
+                    np.mean(slope_values_in_segment),
+                    np.max(slope_values_in_segment)
+                ])
+            else:
+                stats.append([0.0, 0.0, 0.0])
+        else:
+            stats.append([0.0, 0.0, 0.0])
+    return np.array(stats, dtype=np.float32)

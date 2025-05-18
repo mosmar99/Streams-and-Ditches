@@ -113,7 +113,8 @@ def main(log_dir, epochs):
         combined_filenames.append((node_dict[base_name], edge_file, base_name))
 
     deep_feats = [f"deep_{i}" for i in range(4)]
-    node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *deep_feats, "target"]
+    slope_feature_names = ["slope_min", "slope_mean", "slope_max"]
+    node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *slope_feature_names, *deep_feats, "target"]
     edge_names = ["target", "source"]
 
     # --- Load TRAIN/TEST Data ---
