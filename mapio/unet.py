@@ -172,7 +172,7 @@ class UNet(nn.Module):
     def _train(self, train_loader, num_epochs, criterion, optimizer, epoch, total_steps):
         model.train()
         running_loss = 0.0
-        for i, (images, labels) in enumerate(train_loader):
+        for i, (images, labels, _) in enumerate(train_loader):
             # add some reg. to the loss
             outputs_cropped = model.predict(images)
             squeezed_labels = labels.squeeze(1).long().to(device) # B, C, H, W -> B, H, W
@@ -219,7 +219,7 @@ class UNet(nn.Module):
 
 
         with torch.no_grad():
-            for images, labels in val_loader:
+            for images, labels, _ in val_loader:
                 # setup
                 images, padding = add_padding(images)
                 labels_padded, _ = add_padding(labels)
@@ -361,7 +361,7 @@ class UNetDataset(Dataset):
         image_tensor = self.transform(image)
         label_tensor = self.transform(label)
 
-        return image_tensor, label_tensor
+        return image_tensor, label_tensor, file_name
 
 def calculate_iou(outputs_logits, labels, num_classes):
     preds = torch.argmax(outputs_logits, dim=1)

@@ -40,6 +40,9 @@ def extract_majority_labels(multi_seg_mask, target):
 
         target_masked = target[seg_mask]
         unique, counts = np.unique(target_masked, return_counts=True)
+
+        counts[unique == 0] = counts[unique == 0]//6
+
         majority_index = np.argmax(counts)
         labels.append(unique[majority_index])
     return np.array(labels)
@@ -114,14 +117,29 @@ def image_to_graph(image_preds, image_probs, label_image, feature_map):
 
     # dilated_ws = grey_dilation(ws_alpha, size=(3, 3))
 
+    H, W = ws_alpha_reindex.shape
     label_pairs = set()
-    for shift in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
-        shifted = np.roll(ws_alpha_reindex, shift, axis=(0,1))
-        mask = (ws_alpha_reindex != shifted) & (ws_alpha_reindex != 0) & (shifted != 0)
-        pairs = np.stack([ws_alpha_reindex[mask], shifted[mask]], axis=1)
+
+    # 8-connectivity shifts
+    shifts = [(-1, 0), (1, 0), (0, -1), (0, 1),
+            (-1, -1), (-1, 1), (1, -1), (1, 1)]
+
+    for dy, dx in shifts:
+        # Define slicing ranges avoiding edges
+        y_src = slice(max(0, -dy), H - max(0, dy))
+        x_src = slice(max(0, -dx), W - max(0, dx))
+        y_dst = slice(max(0, dy), H - max(0, -dy))
+        x_dst = slice(max(0, dx), W - max(0, -dx))
+
+        current = ws_alpha_reindex[y_src, x_src]
+        neighbor = ws_alpha_reindex[y_dst, x_dst]
+
+        mask = (current != neighbor) & (current != 0) & (neighbor != 0)
+        pairs = np.stack([current[mask], neighbor[mask]], axis=1)
+
         for a, b in pairs:
             if a != b:
-                label_pairs.add(tuple(sorted((a-1, b-1))))
+                label_pairs.add(tuple(sorted((a - 1, b - 1))))
     
     return np.array(labeled_centers, dtype=np.float32), np.array(list(label_pairs), dtype=np.int32), ws_alpha_reindex
 
@@ -133,3 +151,12 @@ def graph_to_image(node_predictions, node_mask):
         seg_mask = node_id == node_mask
         output[seg_mask] = node_predictions[node_id-1]
     return output
+
+def plot_graph_edges(ax, nodes, edges):
+    for edge in edges:
+        label_a, label_b = edge
+        coord_a = nodes[nodes[:, 0] == label_a][0, 1:]
+        coord_b = nodes[nodes[:, 0] == label_b][0, 1:]
+
+        ax.plot([coord_a[1], coord_b[1]], [coord_a[0], coord_b[0]], 'k-', lw=0.3)
+    return ax

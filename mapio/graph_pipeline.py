@@ -89,7 +89,7 @@ def main(logdir, epochs=42, batch_size=42):
     # 20250513_161035
     # instantiate the model
     test_model = UNet().to(device)
-    best_model_path = 'logs/unet_model_ckpt.pth'
+    best_model_path = 'logs/unet_model_ckpt1.pth'
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
 
@@ -109,11 +109,11 @@ def main(logdir, epochs=42, batch_size=42):
     os.makedirs(graph_dir, exist_ok=True)
     os.makedirs(node_mask_dir, exist_ok=True)
 
-    pca = fit_pca(train_loader, best_model_path)
+    pca = fit_pca(train_loader, best_model_path, n_components=4)
 
     # iterate over the train dataset
     print('Iterating over the train dataset...')
-    for i, (batch_images, batch_labels) in tqdm.tqdm(enumerate(train_loader)):
+    for i, (batch_images, batch_labels, img_file_name) in tqdm.tqdm(enumerate(train_loader)):
         # images, padding = test_model.add_padding(batch_images)
         batch_images = batch_images.to(device)
         labels = batch_labels.squeeze(1).long().to(device)
@@ -130,12 +130,36 @@ def main(logdir, epochs=42, batch_size=42):
         graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i], pred_cpu[i], labes_cpu[i], deep_pca[i]) for i in range(pred_cpu.shape[0])]
 
         for j, (nodes, connections, node_mask) in enumerate(graphs):
-            deep_fmt = ('%.7f',)*64
+            # print(nodes[:,:2].shape)
+            # plt.figure(figsize=(8, 6))
+            # plt.imshow(argmax_pred_cpu[j], vmin=0, vmax=2)
+
+            # color_map = {0:"#ffffff",
+            #           1:"#00BFFF",
+            #           2:"#32CD32"}
+            
+            # colors = [color_map[i] for i in nodes[:,-1]]
+
+            # plt.scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
+            # graph_processing.plot_graph_edges(plt, nodes[:,:3], connections)
+            # plt.show()
+
+            # fig, ax = plt.subplots(1,2,figsize=(8, 6))
+            # ax[0].imshow(argmax_pred_cpu[j], vmin=0, vmax=2)
+            # graph_processing.plot_graph_edges(ax[0], nodes[:,:3], connections)
+            # ax[0].scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
+
+            # ax[1].imshow(labes_cpu[j], vmin=0, vmax=2)
+            # graph_processing.plot_graph_edges(ax[1], nodes[:,:3], connections)
+            # ax[1].scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
+            # plt.show()
+
+            deep_fmt = ('%.7f',)*4
             node_fmt = ('%d', '%d', '%d', '%.7f', '%.7f', '%.7f', *deep_fmt, '%d')
             if nodes.shape[0] != 0:
                 np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.nodes"), nodes, delimiter=",", fmt=node_fmt)
                 np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.edges"), connections, delimiter=",", fmt='%d')    
-                np.savez_compressed(os.path.join(node_mask_dir, f"{i * batch_size + j}.npz"), image=node_mask)
+                np.savez_compressed(os.path.join(node_mask_dir, f"{i * batch_size + j}.npz"), image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
         # save the predictions
         # for j in range(pred.shape[0]):
         #     pred_image = pred[j].cpu().numpy().astype('uint8')

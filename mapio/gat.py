@@ -80,7 +80,8 @@ class PrecisionCSVLogger(tf.keras.callbacks.CSVLogger):
         super().on_epoch_end(epoch, formatted_logs)
 
 def main(log_dir, epochs):
-    data_dir = './logs/m1/test_gat4/graphs'
+    data_dir = './logs/m1/test_gat/graphs'
+    node_mask_dir = './logs/m1/test_gat/reconstruction'
     files = os.listdir(data_dir)
     node_files = sorted([f for f in files if f.endswith('.nodes')])
     edge_files = sorted([f for f in files if f.endswith('.edges')])
@@ -119,7 +120,7 @@ def main(log_dir, epochs):
         all_node_data.append(node_df)
         all_edge_data.append(edge_df)
     
-    BATCH_SIZE = 2
+    BATCH_SIZE = 4
     all_node_data, all_edge_data = batch_node_data(all_node_data, all_edge_data, BATCH_SIZE)
 
     TRAIN_SPLIT = 0.70
@@ -163,7 +164,7 @@ def main(log_dir, epochs):
         processed_graphs = []
         for (node_df, edge_df) in list(zip(node_data, edge_data)):
             
-            node_features = node_df[[*deep_feats]].values.astype(np.float32)
+            node_features = node_df[["prob_0", "prob_1", "prob_2"]].values.astype(np.float32) # , *deep_feats
             targets = pd.Categorical(node_df["target"], categories=[0,1,2])
             targets = pd.get_dummies(targets)
             graph_ids = node_df["graph_id"].values.astype(np.int32)
@@ -210,7 +211,7 @@ def main(log_dir, epochs):
             for graph in graphs:
                 yield graph
 
-        output_signature = ((tf.TensorSpec(shape=(None, 64), dtype=tf.float32),
+        output_signature = ((tf.TensorSpec(shape=(None, 3), dtype=tf.float32),
                              tf.TensorSpec(shape=(None, 2), dtype=tf.int32),
                              tf.TensorSpec(shape=(None,), dtype=tf.int32)
                             ),
@@ -430,11 +431,11 @@ def main(log_dir, epochs):
             return {m.name: m.result() for m in self.metrics}
 
     # --- Hyperparameter Search Setup ---
-    hidden_units = 200
+    hidden_units = 100
     num_heads = 11
 
     # Fixed parameters
-    NUM_LAYERS = 7
+    NUM_LAYERS = 5
     OUTPUT_DIM = 3
     LEARNING_RATE = 1e-3
     ATTENTION_TYPE = "std"
@@ -462,10 +463,14 @@ def main(log_dir, epochs):
     loss_fn = keras.losses.CategoricalCrossentropy()
     optimizer = keras.optimizers.Adam(learning_rate=LEARNING_RATE, weight_decay=0.01)
     metrics = [keras.metrics.IoU(3, [0,1,2]),
-               keras.metrics.Recall(),
-               keras.metrics.Recall(class_id=0, name='recall_0'),
-               keras.metrics.Recall(class_id=1, name='recall_1'),
-               keras.metrics.Recall(class_id=2, name='recall_2')] 
+               keras.metrics.Recall(name="rec"),
+               keras.metrics.Recall(class_id=0, name='rec_0'),
+               keras.metrics.Recall(class_id=1, name='rec_1'),
+               keras.metrics.Recall(class_id=2, name='rec_2'),
+               keras.metrics.Precision(name="prec"),
+               keras.metrics.Precision(class_id=0, name='prec_0'),
+               keras.metrics.Precision(class_id=1, name='prec_1'),
+               keras.metrics.Precision(class_id=2, name='prec_2')] 
 
     early_stopping = keras.callbacks.EarlyStopping(
         monitor="val_loss",
