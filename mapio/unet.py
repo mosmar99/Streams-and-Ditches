@@ -19,20 +19,20 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 NUM_CLASSES = 3
 
-num_epochs = 3
-batch_size = 8
+num_epochs = 100
+batch_size = 12
 learning_rate = 0.001
 
 print(f"num_epochs: {num_epochs}, batch_size: {batch_size}, learning_rate: {learning_rate}")
 
-def double_conv(in_c, out_c, dropout_prob=0.1):
+def double_conv(in_c, out_c, dropout_prob=0.2):
     conv = nn.Sequential(
         nn.Conv2d(in_c, out_c, kernel_size=3, padding='same', bias=False),
         nn.BatchNorm2d(out_c),
         nn.ReLU(inplace=True),
-        nn.Conv2d(out_c, out_c, kernel_size=3, padding='same', bias=False),
-        nn.BatchNorm2d(out_c),
-        nn.ReLU(inplace=True),
+        # nn.Conv2d(out_c, out_c, kernel_size=3, padding='same', bias=False),
+        # nn.BatchNorm2d(out_c),
+        # nn.ReLU(inplace=True),
         nn.Dropout(p=dropout_prob)
     )
     return conv
@@ -134,9 +134,6 @@ class UNet(nn.Module):
         outputs = self(images)
         outputs_cropped = remove_padding(outputs, padding)
         return outputs_cropped
-    
-    def predict_softmax(self, images):
-        return nn.functional.softmax(self.predict(images), dim=1)
 
     def forward(self, image):
         x1 = self.down_conv1(image)
@@ -192,7 +189,7 @@ class UNet(nn.Module):
 
             running_loss += loss.item() * images.size(0)
 
-            if (i+1) % 10 == 0:
+            if (i+1) % 46 == 0:
                 print(f"Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{total_steps}], Loss: {loss.item()}", flush=True)
 
         epoch_loss = running_loss / len(train_dataset)
@@ -335,7 +332,7 @@ class UNet(nn.Module):
         for epoch in range(num_epochs):
             start_time = time.time()
             self._train(train_loader, num_epochs, criterion, optimizer, epoch, total_steps)
-            self._validate(val_loader, criterion, num_epochs)
+            self._validate(val_loader, criterion, epoch)
             end_time = time.time()
             print(f" -- Time: {end_time - start_time:.2f} seconds", flush=True)
 
@@ -522,15 +519,16 @@ if __name__ == "__main__":
 
     model = UNet().to(device)
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.05)
+    class_weights = torch.tensor([1.0, 100.0, 1000.0], device=device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.001)
 
     model.fit(train_loader, val_loader, num_epochs, criterion, optimizer)
 
     final_time = time.time()
     print(f"Training completed in {(final_time - begin_time) / 60:.2f} minutes", flush=True)
 
-    torch.save(model.state_dict(), 'unet_model.pth')
+    torch.save(model.state_dict(), os.path.join(logdir, 'final_unet_model_ckpt.pth'))
     print("Model saved as unet_model.pth")
 
  # --------------- START OF TEST SECTION ---------------
@@ -657,6 +655,6 @@ if __name__ == "__main__":
             log_file.write(f"Mean  | {mean_iou_test:.4f} | {mean_recall_test:.4f} | {mean_f1_test:.4f} | {mean_mcc_test:.4f}\n")
 
     else:
-        print(f"Error: Best model checkpoint not found at {best_model_path}. Skipping test phase.")
+        print(f"Error: Best model checkpoint not found at {best_model_path}. Skipping test phase.", flush=True)
 
     # --------------- END OF ADDED TEST SECTION ---------------
