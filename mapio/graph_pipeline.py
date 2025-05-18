@@ -110,7 +110,7 @@ def main(logdir, epochs=42, batch_size=42):
     os.makedirs(graph_dir, exist_ok=True)
     os.makedirs(node_mask_dir, exist_ok=True)
 
-    # pca = fit_pca(train_loader, best_model_path, n_components=4)
+    pca = fit_pca(train_loader, best_model_path, n_components=4)
 
     # iterate over the train dataset
     print('Iterating over the train dataset...')
@@ -128,8 +128,8 @@ def main(logdir, epochs=42, batch_size=42):
         argmax_pred_cpu = argmax_pred.cpu().numpy()
         labes_cpu = labels.cpu().numpy()
         batch_images_cpu = batch_images.cpu().numpy()
-        # deep_pca = apply_pca_transform(pca, intermediate["x9"])
-        graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i], pred_cpu[i], labes_cpu[i], intermediate["x9"][i], batch_images_cpu[i]) for i in range(pred_cpu.shape[0])]
+        deep_pca = apply_pca_transform(pca, intermediate["x9"])
+        graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i], pred_cpu[i], labes_cpu[i], deep_pca[i], batch_images_cpu[i]) for i in range(pred_cpu.shape[0])]
 
         for j, (nodes, connections, node_mask) in enumerate(graphs):
             # print(nodes[:,:2].shape)
@@ -156,8 +156,8 @@ def main(logdir, epochs=42, batch_size=42):
             # ax[1].scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
             # plt.show()
 
-            deep_fmt = ('%.7f',)*512
-            node_fmt = ('%d', '%d', '%d', '%.7f', '%.7f', '%.7f', *deep_fmt, '%d')
+            deep_fmt = ('%.7f',)*4
+            node_fmt = ('%d', '%d', '%d', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', *deep_fmt, '%d')
             if nodes.shape[0] != 0:
                 np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.nodes"), nodes, delimiter=",", fmt=node_fmt)
                 np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.edges"), connections, delimiter=",", fmt='%d')    

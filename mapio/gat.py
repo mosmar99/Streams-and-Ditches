@@ -94,7 +94,7 @@ class PrecisionCSVLogger(tf.keras.callbacks.CSVLogger):
         super().on_epoch_end(epoch, formatted_logs)
 
 def main(log_dir, epochs):
-    data_dir = './logs/m1/test_gat_pca4/graphs'
+    data_dir = './logs/m1/test_gat_stats/graphs'
 
     files = os.listdir(data_dir)
     node_files = sorted([f for f in files if f.endswith('.nodes')])
@@ -113,7 +113,7 @@ def main(log_dir, epochs):
         combined_filenames.append((node_dict[base_name], edge_file, base_name))
 
     deep_feats = [f"deep_{i}" for i in range(4)]
-    slope_feature_names = ["slope_min", "slope_mean", "slope_max"]
+    slope_feature_names = ["slope_min", "slope_mean", "slope_max", "slope_std", "area"]
     node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *slope_feature_names, *deep_feats, "target"]
     edge_names = ["target", "source"]
 
@@ -179,7 +179,7 @@ def main(log_dir, epochs):
         processed_graphs = []
         for (node_df, edge_df) in list(zip(node_data, edge_data)):
             
-            node_features = node_df[["center_x", "center_y", "prob_0", "prob_1", "prob_2"]].values.astype(np.float32) # , *deep_feats
+            node_features = node_df[["prob_0", "prob_1", "prob_2", *slope_feature_names, *deep_feats]].values.astype(np.float32) # , *deep_feats
             targets = pd.Categorical(node_df["target"], categories=[0,1,2])
             targets = pd.get_dummies(targets)
             graph_ids = node_df["graph_id"].values.astype(np.int32)
@@ -192,25 +192,25 @@ def main(log_dir, epochs):
     processed_validation_graphs = process_graphs(validation_node_data, validation_edge_data)
     processed_test_graphs = process_graphs(test_node_data, test_edge_data)
 
-    min_coord = 0
-    max_coord = 500
-    coord_range = max_coord - min_coord
+    # min_coord = 0
+    # max_coord = 500
+    # coord_range = max_coord - min_coord
 
-    epsilon = 1e-7
-    if coord_range < epsilon:
-        coord_range = epsilon
+    # epsilon = 1e-7
+    # if coord_range < epsilon:
+    #     coord_range = epsilon
 
-    def normalize_coords(data):
-        return (data - min_coord) / coord_range
+    # def normalize_coords(data):
+    #     return (data - min_coord) / coord_range
     
-    def normalize_graphs(graphs):
-        for graph in graphs:
-            graph[0][0][:,:2] = normalize_coords(graph[0][0][:,:2])
-        return graphs
+    # def normalize_graphs(graphs):
+    #     for graph in graphs:
+    #         graph[0][0][:,:2] = normalize_coords(graph[0][0][:,:2])
+    #     return graphs
     
-    processed_train_graphs = normalize_graphs(processed_train_graphs)
-    processed_validation_graphs = normalize_graphs(processed_validation_graphs)
-    processed_test_graphs = normalize_graphs(processed_test_graphs)
+    # processed_train_graphs = normalize_graphs(processed_train_graphs)
+    # processed_validation_graphs = normalize_graphs(processed_validation_graphs)
+    # processed_test_graphs = normalize_graphs(processed_test_graphs)
 
     print("\n--- Graphs Processed ---")
     print(f"Train graphs: {len(processed_train_graphs)}")
@@ -227,7 +227,7 @@ def main(log_dir, epochs):
             for graph in graphs:
                 yield graph
 
-        output_signature = ((tf.TensorSpec(shape=(None, 5), dtype=tf.float32),
+        output_signature = ((tf.TensorSpec(shape=(None, 12), dtype=tf.float32),
                              tf.TensorSpec(shape=(None, 2), dtype=tf.int32),
                              tf.TensorSpec(shape=(None,), dtype=tf.int32),
                              tf.TensorSpec(shape=(None,), dtype=tf.int32)
@@ -454,7 +454,7 @@ def main(log_dir, epochs):
     # Fixed parameters
     NUM_LAYERS = 5
     OUTPUT_DIM = 3
-    LEARNING_RATE = 1e-4
+    LEARNING_RATE = 1e-3
     ATTENTION_TYPE = "std"
 
     print("\n--- Starting Hyperparameter Search ---")
@@ -518,14 +518,19 @@ def main(log_dir, epochs):
 
     # class_weight = {0: 1, 1: 1, 2: 1}
     # Train the model
-    history = gat_model.fit(
-        train_dataset,
-        validation_data=validation_dataset,
-        epochs=epochs,
-        callbacks=callbacks,
-        verbose=1,
-        # class_weight=class_weight
-    )
+    # history = gat_model.fit(
+    #     train_dataset,
+    #     validation_data=validation_dataset,
+    #     epochs=epochs,
+    #     callbacks=callbacks,
+    #     verbose=1,
+    #     # class_weight=class_weight
+    # )
+
+    dummy_node_features = tf.zeros((4, 12))
+    dummy_edges = tf.zeros((4, 2), dtype=tf.int32)
+    gat_model((dummy_node_features, dummy_edges))
+    gat_model.load_weights("./logs/gat/20250518_231716/model_best.h5")
 
     print("\n--- Model Training Complete for Trial ---")
     for metric in metrics:
@@ -536,7 +541,7 @@ def main(log_dir, epochs):
 
         files_in_combined, predictions_list = split_on_file(predictions, file_name)
         for file_id, graph_preds in zip(files_in_combined, predictions_list):
-            rec_data_dir = os.path.join("./logs/m1/test_gat_pca4/reconstruction", f"{file_id}.npz")
+            rec_data_dir = os.path.join("./logs/m1/test_gat_stats/reconstruction", f"{file_id}.npz")
             rec_data = np.load(rec_data_dir)
             node_mask = rec_data["image"]
             unet_pred = rec_data["unet_pred"]
@@ -546,6 +551,14 @@ def main(log_dir, epochs):
             gt = tifffile.imread(gt_path)
 
             gat_pred = graph_processing.graph_to_image(np.argmax(graph_preds.numpy(), axis=1), node_mask)
+
+            vmin = 0
+            vmax = 2
+            fig, ax = plt.subplots(1,3)
+            ax[0].imshow(unet_pred, vmin=vmin, vmax=vmax)
+            ax[1].imshow(gat_pred, vmin=vmin, vmax=vmax)
+            ax[2].imshow(gt, vmin=vmin, vmax=vmax)
+            plt.show()
 
             for metric in metrics:
                 metric.update_state(gt, gat_pred)

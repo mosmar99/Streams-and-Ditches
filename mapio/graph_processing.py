@@ -169,19 +169,17 @@ def extract_slope_statistics(multi_seg_mask, slope_image):
     unique_segment_ids = unique_segment_ids[unique_segment_ids != 0] 
 
     for segment_id in unique_segment_ids:
-        # if segment_id == 0: continue
 
         seg_mask = (multi_seg_mask == segment_id)
-        if np.any(seg_mask):
-            slope_values_in_segment = slope_image[seg_mask]
-            if slope_values_in_segment.size > 0:
-                stats.append([
-                    np.min(slope_values_in_segment),
-                    np.mean(slope_values_in_segment),
-                    np.max(slope_values_in_segment)
-                ])
-            else:
-                stats.append([0.0, 0.0, 0.0])
-        else:
-            stats.append([0.0, 0.0, 0.0])
+        slope_image_squeezed = slope_image.squeeze(0)
+        slope_values_in_segment = slope_image_squeezed[seg_mask]
+
+        stats.append([
+            np.min(slope_values_in_segment),
+            np.mean(slope_values_in_segment),
+            np.max(slope_values_in_segment),
+            np.std(slope_values_in_segment),
+            np.sum(seg_mask)
+        ])
+
     return np.array(stats, dtype=np.float32)
