@@ -112,9 +112,10 @@ def main(log_dir, epochs):
 
     data_dir = './logs/m1/test_gat_more_all/graphs'
     all_files = set([f.split('.')[0] for f in os.listdir(data_dir)])
-
-    node_files = sorted([f + ".nodes" for f in all_files])
-    edge_files = sorted([f + ".edges" for f in all_files])
+    print(len(all_files))
+    # all_files = test_files + train_files
+    node_files = [f + ".nodes" for f in all_files]
+    edge_files = [f + ".edges" for f in all_files]
 
     combined_filenames = zip(node_files, edge_files, all_files)
 
@@ -159,12 +160,13 @@ def main(log_dir, epochs):
     test_node_data = [all_node_data[i] for i, graph in enumerate(all_files) if graph in test_files]
     test_edge_data = [all_edge_data[i] for i, graph in enumerate(all_files) if graph in test_files]
 
+    print("Train:",len(train_node_data))
+    print("Test :",len(test_node_data))
+
     BATCH_SIZE = 4
     train_node_data, train_edge_data = batch_node_data(train_node_data, train_edge_data, BATCH_SIZE)
     test_node_data, test_edge_data = batch_node_data(test_node_data, test_edge_data, BATCH_SIZE)
 
-    print("Train:",len(train_node_data))
-    print("Test :",len(test_node_data))
     # --- End LIST - TRAIN/TEST Data Loading ---
 
     # Preprocessing data for GAT model - TRAIN - TEST (TENSORS)
@@ -488,17 +490,17 @@ def main(log_dir, epochs):
 
     # class_weight = {0: 1, 1: 3, 2: 10}
     # Train the model
-    history = gat_model.fit(
-        train_dataset,
-        epochs=epochs,
-        callbacks=callbacks,
-        verbose=1,
-    )
+    # history = gat_model.fit(
+    #     train_dataset,
+    #     epochs=epochs,
+    #     callbacks=callbacks,
+    #     verbose=1,
+    # )
 
     dummy_node_features = tf.zeros((4, 20))
     dummy_edges = tf.zeros((4, 2), dtype=tf.int32)
     gat_model((dummy_node_features, dummy_edges))
-    gat_model.load_weights("./logs/gat/gat_or_bust/model_best.h5")
+    gat_model.load_weights("./logs/gat/20250519_214239/model.h5")
 
     tot_tp = np.zeros((3,))
     tot_fp = np.zeros((3,))
@@ -517,7 +519,7 @@ def main(log_dir, epochs):
 
         files_in_combined, predictions_list = split_on_file(predictions, file_name)
         for file_id, graph_preds, nodes in zip(files_in_combined, predictions_list, nodes_list):
-            rec_data_dir = os.path.join("./logs/m1/test_gat_more_all/reconstruction", f"{file_id}.npz")
+            rec_data_dir = os.path.join("./logs/m1/test_gat_more_all/reconstruction", f"{file_id.decode('utf-8')}.npz")
             rec_data = np.load(rec_data_dir)
             node_mask = rec_data["image"]
             unet_pred = rec_data["unet_pred"]
@@ -531,11 +533,16 @@ def main(log_dir, epochs):
             
             # vmin = 0
             # vmax = 2
-            # fig, ax = plt.subplots(1,4)
-            # ax[0].imshow(node_mask, vmin=vmin, vmax=vmax)
+            # fig, ax = plt.subplots(1,3)
+            # ax[0].imshow(unet_pred, vmin=vmin, vmax=vmax)
+            # ax[0].set_title("Unet Prediction")
             # ax[1].imshow(gat_pred, vmin=vmin, vmax=vmax)
+            # ax[1].set_title("Gat Prediction")
             # ax[2].imshow(gt, vmin=vmin, vmax=vmax)
-            # plt.show()
+            # ax[2].set_title("Ground Truth")
+
+            plt.show()
+
             num_classes = 3
             gt_onehot = np.eye(num_classes)[gt]
             gat_pred_onehot = np.eye(num_classes)[gat_pred]

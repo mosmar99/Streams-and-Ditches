@@ -3,8 +3,9 @@ import pandas as pd
 import torch
 import metrics
 from torch.optim import Adam
+from torch import nn
 import torch.nn.functional as F
-from torch.nn import CrossEntropyLoss, Linear
+from torch.nn import CrossEntropyLoss, Linear, Identity
 import numpy as np
 from tqdm import tqdm
 from torch_geometric.data import Data, Batch
@@ -13,28 +14,32 @@ from sklearn.model_selection import train_test_split
 from torch_geometric.nn import GATv2Conv, GATConv, global_mean_pool, global_add_pool, global_max_pool
 
 def read_graphs(data_dir, num_deep_feats):
-    def normalize_coords(data, minimum, range):
-        return (data - minimum) / range
+    def read_file_list(file_path):
+        with open(file_path, 'r') as f:
+            return [line.strip() for line in f.readlines()]
+        
+    def normalize_coords(data, minimum, coord_range):
+        return (data - minimum) / coord_range
 
-    files = os.listdir(data_dir)
-    node_files = sorted([f for f in files if f.endswith('.nodes')])
-    edge_files = sorted([f for f in files if f.endswith('.edges')])
+    train_fnames_path = './data/05m_folds_mapio/r1/f1/train.dat'
+    test_fnames_path = './data/05m_folds_mapio/r1/f1/test.dat'
 
-    node_base_names = [f.replace('.nodes', '') for f in node_files]
-    edge_base_names = [f.replace('.edges', '') for f in edge_files]
+    train_files = read_file_list(train_fnames_path)
+    test_files = read_file_list(test_fnames_path)
 
-    if len(node_base_names) != len(edge_base_names) or set(node_base_names) != set(edge_base_names):
-        raise ValueError("Mismatch or inconsistency between node and edge files found.")
+    print([f for f in train_files if f in test_files])
 
-    node_dict = {f.replace('.nodes', ''): f for f in node_files}
-    combined_filenames = []
-    for edge_file in edge_files:
-        base_name = edge_file.replace('.edges', '')
-        combined_filenames.append((node_dict[base_name], edge_file, base_name))
+    all_files = set([f.split('.')[0] for f in os.listdir(data_dir)])
+    print(len(all_files))
+    # all_files = test_files + train_files
+    node_files = [f + ".nodes" for f in all_files]
+    edge_files = [f + ".edges" for f in all_files]
+
+    combined_filenames = zip(node_files, edge_files, all_files)
 
     deep_feats = [f"deep_{i}" for i in range(num_deep_feats)]
     slope_feature_names = ["slope_min", "slope_mean", "slope_max", "slope_std", "area"]
-    node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *slope_feature_names, *deep_feats, "target"] #, *slope_feature_names
+    node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *slope_feature_names, *deep_feats, "target"]
     edge_names = ["target", "source"]
 
     # --- Load TRAIN/TEST Data ---
@@ -49,7 +54,7 @@ def read_graphs(data_dir, num_deep_feats):
         # Make graph undirected
         edge_df = pd.concat([edge_df, edge_df.rename(columns={"source": "target", "target": "source"})])
 
-        node_df["area"] = normalize_coords(node_df["area"], minimum=10, range=100)
+        node_df["area"] = normalize_coords(node_df["area"], minimum=10, coord_range=100)
 
         # # Add self-loops to the edge DataFrame
         # node_ids = node_df['node_id'].unique()
@@ -60,8 +65,9 @@ def read_graphs(data_dir, num_deep_feats):
         # edge_df = pd.concat([edge_df, self_loops], ignore_index=True)
 
 
-        if edge_df.empty: # dont append edges to node list that contain no edges
-            continue
+        if node_df.empty: # dont append edges to node list that contain no edges
+            print("THERE IS AN EMPTY GRAPH, GTFO")
+            exit()
 
         all_node_data.append(node_df)
         all_edge_data.append(edge_df)
@@ -87,7 +93,11 @@ def read_graphs(data_dir, num_deep_feats):
 
         datas.append(data)
     
-    return datas
+    # Split the data into training, validation, and test sets
+    train_datas = [datas[i] for i, graph in enumerate(all_files) if graph in train_files]
+    test_datas = [datas[i] for i, graph in enumerate(all_files) if graph in test_files]
+    
+    return train_datas, test_datas
 
 class MinCheckpoint():
     def __init__(self, logdir):
@@ -115,41 +125,32 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         self.dropout_rate = dropout_rate
         self.num_classes = num_classes
 
-        self.lin1 = Linear(in_channels, in_channels)
-        self.conv1 = GATv2Conv(in_channels, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
+        self.preprocess = Linear(in_channels, hidden_channels_gnn*heads)
+        self.conv1 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
 
-        self.lin2 = Linear(hidden_channels_gnn * heads, hidden_channels_gnn * heads)
         self.conv2 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
 
-        self.lin3 = Linear(hidden_channels_gnn * heads, hidden_channels_gnn * heads)
         self.conv3 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
 
-        self.lin4 = Linear(hidden_channels_gnn * heads, hidden_channels_gnn * heads)
         self.conv4 = GATv2Conv(hidden_channels_gnn * heads, out_channels_gnn, heads=heads, concat=False, dropout=dropout_rate, residual=True)
 
         self.node_classifier = torch.nn.Linear(out_channels_gnn, num_classes)
 
     def forward(self, x, edge_index, batch):
-        x = self.lin1(x)
+        x = self.preprocess(x)
         x = F.relu(x)
         x = self.conv1(x, edge_index)
         x = F.elu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
-        x = self.lin2(x)
-        x = F.relu(x)
         x = self.conv2(x, edge_index)
         x = F.elu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
-        x = self.lin3(x)
-        x = F.relu(x)
         x = self.conv3(x, edge_index)
         x = F.elu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
-        x = self.lin4(x)
-        x = F.relu(x)
         x = self.conv4(x, edge_index)
         x = F.elu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
@@ -210,17 +211,17 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         metrics = metrics_handler.value(prefix="VAL_")
         return avg_loss, metrics
     
-    def fit(self, train_loader, val_loader, optimizer, criterion, epochs, device,
+    def fit(self, train_loader, optimizer, criterion, epochs, device, val_loader=None,
             lr_scheduler=None, checkpoint_handlers=None, metrics_handler=None, log_dir=None):
 
-        history = {'train_loss': [], 'train_metrics': [], 'val_loss': [], 'val_metrics': []}
+        history = {'train_loss': [], 'train_metrics': []}#, 'val_loss': [], 'val_metrics': []}
 
         names = []
         if log_dir != None:
             with open(os.path.join(log_dir, "training.log"), 'w') as f:
-                names = ["LOSS", "VAL_LOSS"]
+                names = ["LOSS"]#, "VAL_LOSS"]
                 names += metrics_handler.labels()
-                names += metrics_handler.labels(prefix="VAL_")
+                # names += metrics_handler.labels(prefix="VAL_")
                 f.write(f'{",".join(names)}\n')
 
         for epoch in range(1, epochs + 1):
@@ -229,27 +230,28 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
             print(f"Current LR: {current_lr:.6f}")
 
             train_loss, train_metrics = self._train_epoch(train_loader, optimizer, criterion, device, metrics_handler=metrics_handler)
-            val_loss, val_metrics = self._validate_epoch(val_loader, criterion, device, metrics_handler=metrics_handler)
 
+            # val_loss, val_metrics = self._validate_epoch(val_loader, criterion, device, metrics_handler=metrics_handler)
+            val_loss = np.inf
             if log_dir != None:
                 with open(os.path.join(log_dir, "training.log"), 'a') as f:
                     results = train_metrics
-                    results.update(val_metrics)
+                    # results.update(val_metrics)
                     results["LOSS"] = train_loss
-                    results["VAL_LOSS"] = val_loss
+                    # results["VAL_LOSS"] = val_loss
                     result_strings = [f"{results[name]:.4f}" for name in names]
                     f.write(f'{",".join(result_strings)}\n')   
 
             train_metrics.keys()
             print(f"Train Loss (node-avg): {train_loss:.4f}")
-            print(f"Val Loss (node-avg): {val_loss:.4f}")
+            # print(f"Val Loss (node-avg): {val_loss:.4f}")
 
             history['train_loss'].append(train_loss)
             history['train_metrics'].append(train_metrics)
-            history['val_loss'].append(val_loss)
-            history['val_metrics'].append(val_metrics)
+            # history['val_loss'].append(val_loss)
+            # history['val_metrics'].append(val_metrics)
 
-            if lr_scheduler:
+            if lr_scheduler and val_loader!=None:
                 if isinstance(lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     lr_scheduler.step(val_loss)
                 else:
@@ -296,24 +298,24 @@ def main():
     import matplotlib.pyplot as plt
 
     SEED = 42
-    BATCH_SIZE = 8
+    BATCH_SIZE = 4
     CLASSES = [0,1,2]
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    data_dir = './logs/m1/test_gat_more/graphs'
+    data_dir = './logs/m1/test_gat_more_all/graphs'
     num_deep_feats = 12
     log_dir = os.path.join('./logs/torch_gat/', timestamp)
     os.makedirs(log_dir, exist_ok=True)
 
-    datas = read_graphs(data_dir, num_deep_feats)
+    train_datas, test_datas = read_graphs(data_dir, num_deep_feats)
 
-    temp_data, test_data = train_test_split(datas, test_size=0.2, random_state=SEED)
-    train_data, val_data = train_test_split(temp_data, test_size=0.1, random_state=SEED)
+    # temp_data, test_data = train_test_split(datas, test_size=0.2, random_state=SEED)
+    # train_data, val_data = train_test_split(temp_data, test_size=0.1, random_state=SEED)
 
-    train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
-    val_loader = DataLoader(val_data, batch_size=BATCH_SIZE)
-    test_loader = DataLoader(test_data, batch_size=BATCH_SIZE)
+    train_loader = DataLoader(train_datas, batch_size=BATCH_SIZE, shuffle=True)
+    # val_loader = DataLoader(val_data, batch_size=BATCH_SIZE)
+    test_loader = DataLoader(test_datas, batch_size=BATCH_SIZE)
 
     metrics_list = [
         metrics.MCC(CLASSES, name="MCC"),
@@ -325,11 +327,11 @@ def main():
 
     num_node_features = 20
     gnn_hidden_dim = 128
-    gnn_output_dim = 128
+    gnn_output_dim = 64
     num_graph_classes = 3
-    heads=11
-    learning_rate = 1e-3
-    weight_decay = 0.03
+    heads=4
+    learning_rate = 8e-4
+    weight_decay = 0.005
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
@@ -339,23 +341,21 @@ def main():
         hidden_channels_gnn=gnn_hidden_dim,
         out_channels_gnn=gnn_output_dim,
         num_classes=num_graph_classes,
-        dropout_rate=0.2,
+        dropout_rate=0.1,
         heads=heads
     ).to(device)
-
 
     checkpoints = [MinCheckpoint(log_dir), Checkpoint(log_dir)]
     optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    class_weights = torch.tensor([1.2,1.0,2.8], device=device)
-    criterion = CrossEntropyLoss(weight=class_weights)
+    # class_weights = torch.tensor([1.2,1.0,2.8], device=device)
+    criterion = CrossEntropyLoss()
 
     history = model.fit(
         train_loader,
-        val_loader,
         optimizer,
         criterion,
-        epochs=50, # Small number of epochs for example
+        epochs=20, # Small number of epochs for example
         device=device,
         checkpoint_handlers=checkpoints,
         metrics_handler=metrics_handler,
@@ -365,7 +365,7 @@ def main():
     # model.load_state_dict(torch.load("./logs/torch_gat/20250519_154852/gat_model_ckpt.pth", map_location=device))
 
     model.eval()
-    reconstruction_data_base_dir = "./logs/m1/test_gat_more/reconstruction"
+    reconstruction_data_base_dir = "./logs/m1/test_gat_more_all/reconstruction"
     gt_data_base_dir = "./data/05m_chips/labels"
 
     img_metrics_list = [
