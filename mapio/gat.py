@@ -129,6 +129,15 @@ def main(log_dir, epochs):
         # Make graph undirected
         edge_df = pd.concat([edge_df, edge_df.rename(columns={"source": "target", "target": "source"})])
 
+        # Add self-loops to the edge DataFrame
+        node_ids = node_df['node_id'].unique()
+        self_loops = pd.DataFrame({
+            'source': node_ids,
+            'target': node_ids
+        })
+        edge_df = pd.concat([edge_df, self_loops], ignore_index=True)
+
+
         if edge_df.empty: # dont append edges to node list that contain no edges
             continue
 
@@ -530,7 +539,7 @@ def main(log_dir, epochs):
     dummy_node_features = tf.zeros((4, 12))
     dummy_edges = tf.zeros((4, 2), dtype=tf.int32)
     gat_model((dummy_node_features, dummy_edges))
-    gat_model.load_weights("./logs/gat/20250518_231716/model_best.h5")
+    gat_model.load_weights("./logs/gat/20250519_093245/model_best.h5")
 
     print("\n--- Model Training Complete for Trial ---")
     for metric in metrics:
@@ -539,8 +548,10 @@ def main(log_dir, epochs):
     for (node_features, edge_df, graph_ids, file_name), targets in tqdm(test_dataset):
         predictions = gat_model((node_features, edge_df))
 
+        _, nodes_list = split_on_file(node_features, file_name)
+
         files_in_combined, predictions_list = split_on_file(predictions, file_name)
-        for file_id, graph_preds in zip(files_in_combined, predictions_list):
+        for file_id, graph_preds, nodes in zip(files_in_combined, predictions_list, nodes_list):
             rec_data_dir = os.path.join("./logs/m1/test_gat_stats/reconstruction", f"{file_id}.npz")
             rec_data = np.load(rec_data_dir)
             node_mask = rec_data["image"]
@@ -551,17 +562,19 @@ def main(log_dir, epochs):
             gt = tifffile.imread(gt_path)
 
             gat_pred = graph_processing.graph_to_image(np.argmax(graph_preds.numpy(), axis=1), node_mask)
-
-            vmin = 0
-            vmax = 2
-            fig, ax = plt.subplots(1,3)
-            ax[0].imshow(unet_pred, vmin=vmin, vmax=vmax)
-            ax[1].imshow(gat_pred, vmin=vmin, vmax=vmax)
-            ax[2].imshow(gt, vmin=vmin, vmax=vmax)
-            plt.show()
+            # unet_g_pred = graph_processing.graph_to_image(np.argmax(nodes[:,:4], axis=1), node_mask)
+            
+            # vmin = 0
+            # vmax = 2
+            # fig, ax = plt.subplots(1,4)
+            # ax[0].imshow(unet_pred, vmin=vmin, vmax=vmax)
+            # ax[1].imshow(unet_g_pred, vmin=vmin, vmax=vmax)
+            # ax[2].imshow(gat_pred, vmin=vmin, vmax=vmax)
+            # ax[3].imshow(gt, vmin=vmin, vmax=vmax)
+            # plt.show()
 
             for metric in metrics:
-                metric.update_state(gt, gat_pred)
+                metric.update_state(gt, gt)
     
     with open(os.path.join(trial_log_dir, "test.csv"), "w") as f:
         names = [metric.name for metric in metrics]
