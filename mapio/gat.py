@@ -94,25 +94,31 @@ class PrecisionCSVLogger(tf.keras.callbacks.CSVLogger):
         super().on_epoch_end(epoch, formatted_logs)
 
 def main(log_dir, epochs):
-    data_dir = './logs/m1/test_gat_stats/graphs'
 
-    files = os.listdir(data_dir)
-    node_files = sorted([f for f in files if f.endswith('.nodes')])
-    edge_files = sorted([f for f in files if f.endswith('.edges')])
+    def read_file_list(file_path):
+        with open(file_path, 'r') as f:
+            return [line.strip() for line in f.readlines()]
+        
+    def normalize_coords(data, minimum, coord_range):
+        return (data - minimum) / coord_range
 
-    node_base_names = [f.replace('.nodes', '') for f in node_files]
-    edge_base_names = [f.replace('.edges', '') for f in edge_files]
+    train_fnames_path = './data/05m_folds_mapio/r1/f1/train.dat'
+    test_fnames_path = './data/05m_folds_mapio/r1/f1/test.dat'
 
-    if len(node_base_names) != len(edge_base_names) or set(node_base_names) != set(edge_base_names):
-        raise ValueError("Mismatch or inconsistency between node and edge files found.")
+    train_files = read_file_list(train_fnames_path)
+    test_files = read_file_list(test_fnames_path)
 
-    node_dict = {f.replace('.nodes', ''): f for f in node_files}
-    combined_filenames = []
-    for edge_file in edge_files:
-        base_name = edge_file.replace('.edges', '')
-        combined_filenames.append((node_dict[base_name], edge_file, base_name))
+    print([f for f in train_files if f in test_files])
 
-    deep_feats = [f"deep_{i}" for i in range(4)]
+    data_dir = './logs/m1/test_gat_more_all/graphs'
+    all_files = set([f.split('.')[0] for f in os.listdir(data_dir)])
+
+    node_files = sorted([f + ".nodes" for f in all_files])
+    edge_files = sorted([f + ".edges" for f in all_files])
+
+    combined_filenames = zip(node_files, edge_files, all_files)
+
+    deep_feats = [f"deep_{i}" for i in range(12)]
     slope_feature_names = ["slope_min", "slope_mean", "slope_max", "slope_std", "area"]
     node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *slope_feature_names, *deep_feats, "target"]
     edge_names = ["target", "source"]
@@ -129,58 +135,36 @@ def main(log_dir, epochs):
         # Make graph undirected
         edge_df = pd.concat([edge_df, edge_df.rename(columns={"source": "target", "target": "source"})])
 
-        # Add self-loops to the edge DataFrame
-        node_ids = node_df['node_id'].unique()
-        self_loops = pd.DataFrame({
-            'source': node_ids,
-            'target': node_ids
-        })
-        edge_df = pd.concat([edge_df, self_loops], ignore_index=True)
+        node_df["area"] = normalize_coords(node_df["area"], minimum=10, coord_range=100)
+
+        # # Add self-loops to the edge DataFrame
+        # node_ids = node_df['node_id'].unique()
+        # self_loops = pd.DataFrame({
+        #     'source': node_ids,
+        #     'target': node_ids
+        # })
+        # edge_df = pd.concat([edge_df, self_loops], ignore_index=True)
 
 
-        if edge_df.empty: # dont append edges to node list that contain no edges
-            continue
+        if node_df.empty: # dont append edges to node list that contain no edges
+            print("THERE IS AN EMPTY GRAPH, GTFO")
+            exit()
 
         all_node_data.append(node_df)
         all_edge_data.append(edge_df)
-    
-    BATCH_SIZE = 4
-    all_node_data, all_edge_data = batch_node_data(all_node_data, all_edge_data, BATCH_SIZE)
-
-    TRAIN_SPLIT = 0.70
-    VALIDATION_SPLIT = 0.10
 
     # Split the data into training, validation, and test sets
-    train_node_data = []
-    train_edge_data = []
-    test_node_data = []
-    test_edge_data = []
+    train_node_data = [all_node_data[i] for i, graph in enumerate(all_files) if graph in train_files]
+    train_edge_data = [all_edge_data[i] for i, graph in enumerate(all_files) if graph in train_files]
+    test_node_data = [all_node_data[i] for i, graph in enumerate(all_files) if graph in test_files]
+    test_edge_data = [all_edge_data[i] for i, graph in enumerate(all_files) if graph in test_files]
 
-    np.random.seed(NUMPY_SEED)
-    tf.random.set_seed(TF_SEED)
-    random.seed(PYTHON_RANDOM_SEED)
+    BATCH_SIZE = 4
+    train_node_data, train_edge_data = batch_node_data(train_node_data, train_edge_data, BATCH_SIZE)
+    test_node_data, test_edge_data = batch_node_data(test_node_data, test_edge_data, BATCH_SIZE)
 
-    # get random train indices
-    num_train_graphs = int(len(all_node_data) * TRAIN_SPLIT)
-    random_train_indices = random.sample(range(len(all_node_data)), num_train_graphs)
-    for i, (node_df, edge_df) in enumerate(zip(all_node_data, all_edge_data)):
-        # Split the data into training and test sets
-        if i in random_train_indices:
-            train_node_data.append(node_df)
-            train_edge_data.append(edge_df)
-        else:
-            test_node_data.append(node_df)
-            test_edge_data.append(edge_df)
-
-    num_validation_graphs = round(len(train_node_data) * VALIDATION_SPLIT)
-    random_validation_indices = random.sample(range(len(train_node_data)), num_validation_graphs)
-    
-    validation_node_data = [train_node_data[i] for i in random_validation_indices]
-    validation_edge_data = [train_edge_data[i] for i in random_validation_indices]
-
-    train_node_data = [graph for i, graph in enumerate(train_node_data) if i not in random_validation_indices]
-    train_edge_data = [graph for i, graph in enumerate(train_edge_data) if i not in random_validation_indices]
-
+    print("Train:",len(train_node_data))
+    print("Test :",len(test_node_data))
     # --- End LIST - TRAIN/TEST Data Loading ---
 
     # Preprocessing data for GAT model - TRAIN - TEST (TENSORS)
@@ -198,32 +182,10 @@ def main(log_dir, epochs):
         return processed_graphs
 
     processed_train_graphs = process_graphs(train_node_data, train_edge_data)
-    processed_validation_graphs = process_graphs(validation_node_data, validation_edge_data)
     processed_test_graphs = process_graphs(test_node_data, test_edge_data)
-
-    # min_coord = 0
-    # max_coord = 500
-    # coord_range = max_coord - min_coord
-
-    # epsilon = 1e-7
-    # if coord_range < epsilon:
-    #     coord_range = epsilon
-
-    # def normalize_coords(data):
-    #     return (data - min_coord) / coord_range
-    
-    # def normalize_graphs(graphs):
-    #     for graph in graphs:
-    #         graph[0][0][:,:2] = normalize_coords(graph[0][0][:,:2])
-    #     return graphs
-    
-    # processed_train_graphs = normalize_graphs(processed_train_graphs)
-    # processed_validation_graphs = normalize_graphs(processed_validation_graphs)
-    # processed_test_graphs = normalize_graphs(processed_test_graphs)
 
     print("\n--- Graphs Processed ---")
     print(f"Train graphs: {len(processed_train_graphs)}")
-    print(f"Validation graphs: {len(processed_validation_graphs)}")
     print(f"Test graphs: {len(processed_test_graphs)}")
     # --- END - Preprocessing data for GAT model - TRAIN - TEST (TENSORS) ---
 
@@ -236,10 +198,10 @@ def main(log_dir, epochs):
             for graph in graphs:
                 yield graph
 
-        output_signature = ((tf.TensorSpec(shape=(None, 12), dtype=tf.float32),
+        output_signature = ((tf.TensorSpec(shape=(None, 20), dtype=tf.float32),
                              tf.TensorSpec(shape=(None, 2), dtype=tf.int32),
                              tf.TensorSpec(shape=(None,), dtype=tf.int32),
-                             tf.TensorSpec(shape=(None,), dtype=tf.int32)
+                             tf.TensorSpec(shape=(None,), dtype=tf.string)
                             ),
                             tf.TensorSpec(shape=(None, 3), dtype=tf.int32))
 
@@ -248,7 +210,6 @@ def main(log_dir, epochs):
         return dataset
 
     train_dataset = create_tf_dataset(processed_train_graphs)
-    validation_dataset = create_tf_dataset(processed_validation_graphs)
     test_dataset = create_tf_dataset(processed_test_graphs)
 
     # # Example: Inspect the first batch in the dataset
@@ -525,25 +486,29 @@ def main(log_dir, epochs):
     # Compile model
     gat_model.compile(loss=loss_fn, optimizer=optimizer, metrics=metrics)
 
-    # class_weight = {0: 1, 1: 1, 2: 1}
+    # class_weight = {0: 1, 1: 3, 2: 10}
     # Train the model
-    # history = gat_model.fit(
-    #     train_dataset,
-    #     validation_data=validation_dataset,
-    #     epochs=epochs,
-    #     callbacks=callbacks,
-    #     verbose=1,
-    #     # class_weight=class_weight
-    # )
+    history = gat_model.fit(
+        train_dataset,
+        epochs=epochs,
+        callbacks=callbacks,
+        verbose=1,
+    )
 
-    dummy_node_features = tf.zeros((4, 12))
+    dummy_node_features = tf.zeros((4, 20))
     dummy_edges = tf.zeros((4, 2), dtype=tf.int32)
     gat_model((dummy_node_features, dummy_edges))
-    gat_model.load_weights("./logs/gat/20250519_093245/model_best.h5")
+    gat_model.load_weights("./logs/gat/gat_or_bust/model_best.h5")
 
-    print("\n--- Model Training Complete for Trial ---")
-    for metric in metrics:
-        metric.reset_state()
+    tot_tp = np.zeros((3,))
+    tot_fp = np.zeros((3,))
+    tot_tn = np.zeros((3,))
+    tot_fn = np.zeros((3,))
+
+    tot_tp_u = np.zeros((3,))
+    tot_fp_u = np.zeros((3,))
+    tot_tn_u = np.zeros((3,))
+    tot_fn_u = np.zeros((3,))
 
     for (node_features, edge_df, graph_ids, file_name), targets in tqdm(test_dataset):
         predictions = gat_model((node_features, edge_df))
@@ -552,7 +517,7 @@ def main(log_dir, epochs):
 
         files_in_combined, predictions_list = split_on_file(predictions, file_name)
         for file_id, graph_preds, nodes in zip(files_in_combined, predictions_list, nodes_list):
-            rec_data_dir = os.path.join("./logs/m1/test_gat_stats/reconstruction", f"{file_id}.npz")
+            rec_data_dir = os.path.join("./logs/m1/test_gat_more_all/reconstruction", f"{file_id}.npz")
             rec_data = np.load(rec_data_dir)
             node_mask = rec_data["image"]
             unet_pred = rec_data["unet_pred"]
@@ -567,23 +532,56 @@ def main(log_dir, epochs):
             # vmin = 0
             # vmax = 2
             # fig, ax = plt.subplots(1,4)
-            # ax[0].imshow(unet_pred, vmin=vmin, vmax=vmax)
-            # ax[1].imshow(unet_g_pred, vmin=vmin, vmax=vmax)
-            # ax[2].imshow(gat_pred, vmin=vmin, vmax=vmax)
-            # ax[3].imshow(gt, vmin=vmin, vmax=vmax)
+            # ax[0].imshow(node_mask, vmin=vmin, vmax=vmax)
+            # ax[1].imshow(gat_pred, vmin=vmin, vmax=vmax)
+            # ax[2].imshow(gt, vmin=vmin, vmax=vmax)
             # plt.show()
+            num_classes = 3
+            gt_onehot = np.eye(num_classes)[gt]
+            gat_pred_onehot = np.eye(num_classes)[gat_pred]
+            unet_pred_onehot = np.eye(num_classes)[unet_pred]
 
-            for metric in metrics:
-                metric.update_state(gt, gt)
-    
-    with open(os.path.join(trial_log_dir, "test.csv"), "w") as f:
-        names = [metric.name for metric in metrics]
+            tp = np.sum((gat_pred_onehot == 1) & (gt_onehot == 1), axis=(0,1))
+            fp = np.sum((gat_pred_onehot == 1) & (gt_onehot == 0), axis=(0,1))
+            tn = np.sum((gat_pred_onehot == 0) & (gt_onehot == 0), axis=(0,1))
+            fn = np.sum((gat_pred_onehot == 0) & (gt_onehot == 1), axis=(0,1))
 
-        results = [metric.result().numpy() for metric in metrics]
-        result_strings = [f"{r:.4f}" for r in results]
+            tp_u = np.sum((unet_pred_onehot == 1) & (gt_onehot == 1), axis=(0,1))
+            fp_u = np.sum((unet_pred_onehot == 1) & (gt_onehot == 0), axis=(0,1))
+            tn_u = np.sum((unet_pred_onehot == 0) & (gt_onehot == 0), axis=(0,1))
+            fn_u = np.sum((unet_pred_onehot == 0) & (gt_onehot == 1), axis=(0,1))
 
-        f.write(f'{",".join(names)}\n')
-        f.write(f'{",".join(result_strings)}\n')          
+            tot_tp += tp
+            tot_fp += fp
+            tot_tn += tn
+            tot_fn += fn
+
+            tot_tp_u += tp_u
+            tot_fp_u += fp_u
+            tot_tn_u += tn_u
+            tot_fn_u += fn_u
+
+    for i in range(3):
+        print(f"class {i}")
+        print(f"GAT :  TP: {tot_tp[i]}", f"FP: {tot_fp[i]}", f"TN: {tot_tn[i]}", f"FN: {tot_fn[i]}")
+        print(f"UNET:  TP: {tot_tp_u[i]}", f"FP: {tot_fp_u[i]}", f"TN: {tot_tn_u[i]}", f"FN: {tot_fn_u[i]}")
+        print(f"GAT :  Recall   : {tot_tp[i]/(tot_tp[i] + tot_fn[i])}")
+        print(f"UNET:  Recall   : {tot_tp_u[i]/(tot_tp_u[i] + tot_fn_u[i])}")
+        print(f"GAT :  Precicion: {tot_tp[i]/(tot_tp[i] + tot_fp[i])}")
+        print(f"UNET:  Precicion: {tot_tp_u[i]/(tot_tp_u[i] + tot_fp_u[i])}")
+
+        
+        
+        
+
+    # with open(os.path.join(trial_log_dir, "test.csv"), "w") as f:
+    #     names = [metric.name for metric in metrics]
+
+    #     results = [metric.result().numpy() for metric in metrics]
+    #     result_strings = [f"{r:.4f}" for r in results]
+
+    #     f.write(f'{",".join(names)}\n')
+    #     f.write(f'{",".join(result_strings)}\n')          
 
 if __name__ == '__main__':
     import argparse

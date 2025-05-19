@@ -72,7 +72,7 @@ def extract_deep_features(coords, target):
         labels.append(segment_features)
     return np.array(labels)
 
-def image_to_graph(image_preds, image_probs, label_image, feature_map, slope_image):
+def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, feature_map_x7, feature_map_u7, slope_image):
     canny = np.zeros_like(image_preds)
     for label in np.unique(image_preds):
         if label == 0:
@@ -113,8 +113,12 @@ def image_to_graph(image_preds, image_probs, label_image, feature_map, slope_ima
     predicted_label = extract_mean_probabilities(ws_alpha_reindex, image_probs)
     target_label = extract_majority_labels(ws_alpha_reindex, label_image)
     slope_stats = extract_slope_statistics(ws_alpha_reindex, slope_image)
-    deep_features = extract_deep_features(centers_int, feature_map)
-    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, slope_stats, deep_features, target_label))
+
+    deep_features_x9 = extract_deep_features(centers_int, feature_map_x9)
+    deep_features_x7 = extract_deep_features(centers_int, feature_map_x7)
+    deep_features_u7 = extract_deep_features(centers_int, feature_map_u7)
+
+    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, slope_stats, deep_features_x9, deep_features_x7, deep_features_u7, target_label))
 
     # dilated_ws = grey_dilation(ws_alpha, size=(3, 3))
 

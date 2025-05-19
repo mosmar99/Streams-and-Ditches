@@ -33,8 +33,8 @@ class BaseClassificationMetric:
             raise TypeError("predicted_logits must be a PyTorch tensor.")
         if not torch.is_tensor(target_indices):
             raise TypeError("target_indices must be a PyTorch tensor.")
-        if predicted_logits.ndim != 2:
-            raise ValueError(f"predicted_logits must be 2D (N, C), got {predicted_logits.ndim}D.")
+        # if predicted_logits.ndim != 2:
+        #     raise ValueError(f"predicted_logits must be 2D (N, C), got {predicted_logits.ndim}D.")
         if target_indices.ndim != 1:
             raise ValueError(f"target_indices must be 1D (N), got {target_indices.ndim}D.")
         if predicted_logits.shape[0] != target_indices.shape[0]:
@@ -152,7 +152,7 @@ class MCC(BaseClassificationMetric):
             tp_f, fp_f, fn_f, tn_f = float(tp), float(fp), float(fn), float(tn)
 
             numerator = (tp_f * tn_f) - (fp_f * fn_f)
-            
+
             d1 = tp_f + fp_f
             d2 = tp_f + fn_f
             d3 = tn_f + fp_f
