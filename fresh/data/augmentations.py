@@ -23,11 +23,14 @@ class ImageAugmentation:
 
         # Apply each augmentation
         for augmentation in self.augmentations:
-            augmented_image = augmentation(image)
-            augmented_label = augmentation(label)
+            try:
+                augmented_image = augmentation(image)
+                augmented_label = augmentation(label)
 
-            augmented_images.append(self.to_tensor(augmented_image))
-            augmented_labels.append(self.to_tensor(augmented_label))
+                augmented_images.append(self.to_tensor(augmented_image))
+                augmented_labels.append(self.to_tensor(augmented_label))
+            except Exception as e:
+                print(f"Error applying augmentation: {e}")
 
         return augmented_images, augmented_labels
 

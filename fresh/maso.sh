@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 # Create a main log directory if it doesn't exist
-MODEL="m1"
+MODEL="main"
 MAIN_LOG_DIR="logs/${MODEL}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$MAIN_LOG_DIR"
@@ -17,7 +17,7 @@ echo "started task with timestamp :: ${TIMESTAMP}"
 
 # Run your python script and redirect output to a file within the job's log directory
 START=$(date +%s)
-python mapio/unet.py --logdir "$JOB_LOG_DIR" > "${JOB_LOG_DIR}/output_${TIMESTAMP}.txt"
+python "${MODEL}".py --logdir "$JOB_LOG_DIR" > "${JOB_LOG_DIR}/output_${TIMESTAMP}.txt"
 END=$(date +%s)
 RUNTIME=$((END - START))
 

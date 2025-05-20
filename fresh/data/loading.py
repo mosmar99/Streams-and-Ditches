@@ -10,19 +10,24 @@ class UNetDataset(Dataset):
         self.image_folder = image_folder
         self.label_folder = label_folder
         self.augmentations = augmentations
+        if self.augmentations:
+            self.num_versions_per_file = len(self.augmentations)
+        else:
+            self.num_versions_per_file = 1
 
     def __len__(self):
-        # Original images + augmented images
-        return len(self.file_list) * (1 + (len(self.augmentations) if self.augmentations else 0))
+        return len(self.file_list) * self.num_versions_per_file
 
     def __getitem__(self, idx):
         # Determine the original index and augmentation index
-        original_idx = idx // (1 + (len(self.augmentations) if self.augmentations else 0))
-        augmentation_idx = idx % (1 + (len(self.augmentations) if self.augmentations else 0))
+        original_idx = idx // self.num_versions_per_file
+        augmentation_idx = idx % self.num_versions_per_file
 
         file_name = self.file_list[original_idx]
-        image_path = os.path.join(self.image_folder, file_name + '.tif')
-        label_path = os.path.join(self.label_folder, file_name + '.tif')
+        
+        # Use os.path.join to construct paths correctly
+        image_path = self.image_folder + '/' + file_name + '.tif'
+        label_path = self.label_folder + '/' + file_name + '.tif'
 
         image = Image.open(image_path).convert("F")
         label = Image.open(label_path).convert("F")
@@ -36,7 +41,7 @@ class UNetDataset(Dataset):
         return transforms.ToTensor()(image), transforms.ToTensor()(label), file_name
 
 def load_data(batch_size,
-              num_workers=15,
+              num_workers=None,
               pin_memory=True,
               train_fnames_path='./data/cv/r1_k10/r1/k1/train.dat',
               val_fnames_path=None,
@@ -44,6 +49,9 @@ def load_data(batch_size,
               image_folder='./data/raw/05m_chips/slope',
               label_folder='./data/raw/05m_chips/labels/',
               augmentations=None):
+
+    if num_workers is None:
+        num_workers = max(0, os.cpu_count() - 1)
 
     def read_file_list(file_path):
         with open(file_path, 'r') as f:
