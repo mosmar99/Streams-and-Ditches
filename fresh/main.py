@@ -25,7 +25,7 @@ def main():
     unet_logdir = os.path.join(read_logdir(), 'checkpoints')
     unet_model_filename = 'best_unet.pth'
 
-    # get dataE
+    # get data
     augmentations = ImageAugmentation()  
     train_loader_unet, test_loader_unet, train_dataset_unet, test_dataset_unet = get_raw_data.load_data(batch_size_unet, augmentations=None)
 
