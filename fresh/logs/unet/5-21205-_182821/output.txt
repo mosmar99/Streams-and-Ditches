@@ -1,0 +1,93 @@
+Beginning to load data...
+ -- Train dataset size: 4134 / 4593 ~ 0.9
+ -- Test dataset size: 459 / 4593 ~ 0.1
+ -- Created DataLoaders with batch size: 9
+
+Starting UNet Training...
+  Epoch [1/20], Batch [10/460], Loss: 0.7594
+  Epoch [1/20], Batch [20/460], Loss: 0.7388
+  Epoch [1/20], Batch [30/460], Loss: 0.7163
+  Epoch [1/20], Batch [40/460], Loss: 0.6891
+  Epoch [1/20], Batch [50/460], Loss: 0.6747
+  Epoch [1/20], Batch [60/460], Loss: 0.6559
+  Epoch [1/20], Batch [70/460], Loss: 0.6166
+  Epoch [1/20], Batch [80/460], Loss: 0.5825
+  Epoch [1/20], Batch [90/460], Loss: 0.5755
+  Epoch [1/20], Batch [100/460], Loss: 0.5846
+  Epoch [1/20], Batch [110/460], Loss: 0.5077
+  Epoch [1/20], Batch [120/460], Loss: 0.4874
+  Epoch [1/20], Batch [130/460], Loss: 0.5007
+  Epoch [1/20], Batch [140/460], Loss: 0.4780
+  Epoch [1/20], Batch [150/460], Loss: 0.5073
+  Epoch [1/20], Batch [160/460], Loss: 0.4773
+  Epoch [1/20], Batch [170/460], Loss: 0.4469
+  Epoch [1/20], Batch [180/460], Loss: 0.4317
+  Epoch [1/20], Batch [190/460], Loss: 0.4593
+  Epoch [1/20], Batch [200/460], Loss: 0.4934
+  Epoch [1/20], Batch [210/460], Loss: 0.5212
+  Epoch [1/20], Batch [220/460], Loss: 0.4541
+  Epoch [1/20], Batch [230/460], Loss: 0.4350
+  Epoch [1/20], Batch [240/460], Loss: 0.4377
+  Epoch [1/20], Batch [250/460], Loss: 0.4431
+  Epoch [1/20], Batch [260/460], Loss: 0.4827
+  Epoch [1/20], Batch [270/460], Loss: 0.4675
+  Epoch [1/20], Batch [280/460], Loss: 0.4849
+  Epoch [1/20], Batch [290/460], Loss: 0.4353
+  Epoch [1/20], Batch [300/460], Loss: 0.4292
+  Epoch [1/20], Batch [310/460], Loss: 0.4153
+  Epoch [1/20], Batch [320/460], Loss: 0.3945
+  Epoch [1/20], Batch [330/460], Loss: 0.4536
+  Epoch [1/20], Batch [340/460], Loss: 0.4786
+  Epoch [1/20], Batch [350/460], Loss: 0.4409
+  Epoch [1/20], Batch [360/460], Loss: 0.4123
+  Epoch [1/20], Batch [370/460], Loss: 0.4613
+  Epoch [1/20], Batch [380/460], Loss: 0.4702
+  Epoch [1/20], Batch [390/460], Loss: 0.4548
+  Epoch [1/20], Batch [400/460], Loss: 0.4727
+  Epoch [1/20], Batch [410/460], Loss: 0.4263
+  Epoch [1/20], Batch [420/460], Loss: 0.4363
+  Epoch [1/20], Batch [430/460], Loss: 0.4596
+  Epoch [1/20], Batch [440/460], Loss: 0.4287
+  Epoch [1/20], Batch [450/460], Loss: 0.4647
+  Epoch [1/20], Batch [460/460], Loss: 0.4246
+--- Epoch [1/20] complete. Average Training Loss: 0.5013 ---
+--- Time taken for epoch: 1737.95 seconds ---
+ -- Updated Checkpoint: inf > 0.501305
+  Epoch [2/20], Batch [10/460], Loss: 0.4472
+  Epoch [2/20], Batch [20/460], Loss: 0.4076
+  Epoch [2/20], Batch [30/460], Loss: 0.4398
+  Epoch [2/20], Batch [40/460], Loss: 0.4406
+  Epoch [2/20], Batch [50/460], Loss: 0.4131
+  Epoch [2/20], Batch [60/460], Loss: 0.4690
+  Epoch [2/20], Batch [70/460], Loss: 0.4089
+  Epoch [2/20], Batch [80/460], Loss: 0.3740
+  Epoch [2/20], Batch [90/460], Loss: 0.3922
+  Epoch [2/20], Batch [100/460], Loss: 0.4503
+  Epoch [2/20], Batch [110/460], Loss: 0.4073
+  Epoch [2/20], Batch [120/460], Loss: 0.4613
+  Epoch [2/20], Batch [130/460], Loss: 0.4439
+  Epoch [2/20], Batch [140/460], Loss: 0.4497
+  Epoch [2/20], Batch [150/460], Loss: 0.3857
+  Epoch [2/20], Batch [160/460], Loss: 0.4214
+  Epoch [2/20], Batch [170/460], Loss: 0.4530
+  Epoch [2/20], Batch [180/460], Loss: 0.4498
+  Epoch [2/20], Batch [190/460], Loss: 0.4312
+  Epoch [2/20], Batch [200/460], Loss: 0.4324
+  Epoch [2/20], Batch [210/460], Loss: 0.4018
+  Epoch [2/20], Batch [220/460], Loss: 0.4246
+  Epoch [2/20], Batch [230/460], Loss: 0.3892
+  Epoch [2/20], Batch [240/460], Loss: 0.4004
+  Epoch [2/20], Batch [250/460], Loss: 0.4443
+  Epoch [2/20], Batch [260/460], Loss: 0.3864
+  Epoch [2/20], Batch [270/460], Loss: 0.4231
+  Epoch [2/20], Batch [280/460], Loss: 0.4225
+  Epoch [2/20], Batch [290/460], Loss: 0.4675
+  Epoch [2/20], Batch [300/460], Loss: 0.4250
+  Epoch [2/20], Batch [310/460], Loss: 0.4326
+  Epoch [2/20], Batch [320/460], Loss: 0.4057
+  Epoch [2/20], Batch [330/460], Loss: 0.3514
+  Epoch [2/20], Batch [340/460], Loss: 0.4120
+  Epoch [2/20], Batch [350/460], Loss: 0.3627
+  Epoch [2/20], Batch [360/460], Loss: 0.4182
+  Epoch [2/20], Batch [370/460], Loss: 0.3816
+  Epoch [2/20], Batch [380/460], Loss: 0.4373

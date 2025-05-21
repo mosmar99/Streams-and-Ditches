@@ -41,7 +41,7 @@ class UNetDataset(Dataset):
         return transforms.ToTensor()(image), transforms.ToTensor()(label)
 
 def load_data(batch_size,
-              num_workers=15,
+              num_workers=7,
               pin_memory=True,
               train_fnames_path='./data/cv/r1_k10/r1/k1/train.dat',
               val_fnames_path=None,
@@ -50,8 +50,8 @@ def load_data(batch_size,
               label_folder='./data/raw/05m_chips/labels/',
               augmentations=None):
 
-    # if num_workers is None:
-    #     num_workers = max(0, os.cpu_count() - 1)
+    if num_workers is None:
+        num_workers = max(0, os.cpu_count() - 1)
 
     def read_file_list(file_path):
         with open(file_path, 'r') as f:
