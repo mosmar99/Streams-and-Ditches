@@ -1,0 +1,6 @@
+Beginning to load data...
+ -- Train dataset size: 4134 / 4593 ~ 0.9
+ -- Test dataset size: 459 / 4593 ~ 0.1
+ -- Created DataLoaders with batch size: 8
+
+Starting UNet Training...
