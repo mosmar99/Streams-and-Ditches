@@ -12,6 +12,9 @@ from sklearn.decomposition import PCA, IncrementalPCA
 import tifffile
 import time
 import tqdm
+import pickle as pk
+import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 
 def read_file_list(file_path):
     with open(file_path, 'r') as f:
@@ -34,7 +37,7 @@ def reduce_features_pca(x, n_components=64):
     compressed_output = np.transpose(compressed_output, (0, 3, 1, 2))
     return compressed_output
 
-def fit_pca(train_loader, best_model_path, n_components=4):
+def fit_pca(train_loader, best_model_path, logdir, n_components=4):
     test_model = UNet().to(device)
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
@@ -75,6 +78,10 @@ def fit_pca(train_loader, best_model_path, n_components=4):
         pca_x7.partial_fit(feats_reshaped_x7)
         pca_u7.partial_fit(feats_reshaped_u7)
     
+    pk.dump(pca_x9, open(os.path.join(logdir, "pca_x9.pkl"), "wb"))
+    pk.dump(pca_x7, open(os.path.join(logdir, "pca_x7.pkl"), "wb"))
+    pk.dump(pca_u7, open(os.path.join(logdir, "pca.pkl"), "wb"))
+
     return pca_x9, pca_x7, pca_u7
 
 def apply_pca_transform(pca, features):
@@ -88,6 +95,16 @@ def apply_pca_transform(pca, features):
 
     return transformed
 
+def save_graph_data(j, img_file_name, nodes, connections, node_mask, 
+                    argmax_pred_cpu, graph_dir, node_mask_dir):
+    if nodes.shape[0] == 0:
+        return
+    deep_fmt = ('%.7f',)*(8*3)
+    node_fmt = ('%d', '%d', '%d', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', *deep_fmt, '%d')
+    if nodes.shape[0] != 0:
+        np.savetxt(os.path.join(graph_dir, f"{img_file_name[j]}.nodes"), nodes, delimiter=",", fmt=node_fmt)
+        np.savetxt(os.path.join(graph_dir, f"{img_file_name[j]}.edges"), connections, delimiter=",", fmt='%d')    
+        np.savez_compressed(os.path.join(node_mask_dir, f"{img_file_name[j]}.npz"), image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
 
 def main(logdir, epochs=42, batch_size=42):
     train_fnames_path = './data/05m_folds_mapio/r1/f1/train.dat'
@@ -102,7 +119,7 @@ def main(logdir, epochs=42, batch_size=42):
     label_folder = './data/05m_chips/labels/'
 
     train_dataset = UNetDataset(all_files, image_folder, label_folder)
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=15, pin_memory=True)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, num_workers=15, pin_memory=True)
 
     # 20250513_161035
     # instantiate the model
@@ -129,73 +146,93 @@ def main(logdir, epochs=42, batch_size=42):
     os.makedirs(graph_dir, exist_ok=True)
     os.makedirs(node_mask_dir, exist_ok=True)
 
-    pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, n_components=4)
+    pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, logdir, n_components=8)
+
+    # pca_x9 = pk.load(open(os.path.join(logdir,"pca_x9.pkl"),'rb'))
+    # pca_x7 = pk.load(open(os.path.join(logdir,"pca_x7.pkl"),'rb'))
+    # pca_u7 = pk.load(open(os.path.join(logdir,"pca.pkl"),'rb'))
 
     # iterate over the train dataset
     print('Iterating over the train dataset...')
-    for i, (batch_images, batch_labels, img_file_name) in tqdm.tqdm(enumerate(train_loader)):
-        # images, padding = test_model.add_padding(batch_images)
-        batch_images = batch_images.to(device)
-        labels = batch_labels.squeeze(1).long().to(device)
+    with multiprocessing.Pool(processes=8) as pool, ThreadPoolExecutor(max_workers=16) as executor:
+        for i, (batch_images, batch_labels, img_file_name) in tqdm.tqdm(enumerate(train_loader)):
+            # images, padding = test_model.add_padding(batch_images)
+            batch_images = batch_images.to(device)
+            labels = batch_labels.squeeze(1).long().to(device)
 
-        # make predictions
-        with torch.no_grad():
-            pred = test_model.predict_softmax(batch_images)
-            argmax_pred = torch.argmax(pred, dim=1)
+            # make predictions
+            with torch.no_grad():
+                pred = test_model.predict_softmax(batch_images)
+                argmax_pred = torch.argmax(pred, dim=1)
 
-        pred_cpu = pred.cpu().numpy()
-        argmax_pred_cpu = argmax_pred.cpu().numpy()
-        labes_cpu = labels.cpu().numpy()
-        batch_images_cpu = batch_images.cpu().numpy()
+            pred_cpu = pred.cpu().numpy()
+            argmax_pred_cpu = argmax_pred.cpu().numpy()
+            labes_cpu = labels.cpu().numpy()
+            batch_images_cpu = batch_images.cpu().numpy()
 
-        deep_pca_x9 = apply_pca_transform(pca_x9, intermediate["x9"])
-        deep_pca_x7 = apply_pca_transform(pca_x7, intermediate["x7"])
-        deep_pca_u7 = apply_pca_transform(pca_u7, intermediate["u7"])
+            deep_pca_x9 = apply_pca_transform(pca_x9, intermediate["x9"])
+            deep_pca_x7 = apply_pca_transform(pca_x7, intermediate["x7"])
+            deep_pca_u7 = apply_pca_transform(pca_u7, intermediate["u7"])
 
-        graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i],
-                                                  pred_cpu[i],
-                                                  labes_cpu[i],
-                                                  deep_pca_x9[i],
-                                                  deep_pca_x7[i],
-                                                  deep_pca_u7[i],
-                                                  batch_images_cpu[i]) for i in range(pred_cpu.shape[0])]
+            # graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i],
+            #                                         pred_cpu[i],
+            #                                         labes_cpu[i],
+            #                                         deep_pca_x9[i], # deep_pca_x9[i]
+            #                                         deep_pca_x7[i], # deep_pca_x7[i]
+            #                                         deep_pca_u7[i], # deep_pca_u7[i]
+            #                                         batch_images_cpu[i]) for i in range(pred_cpu.shape[0])]
+            graphs = pool.starmap(graph_processing.image_to_graph, [
+                (argmax_pred_cpu[i],
+                pred_cpu[i],
+                labes_cpu[i],
+                deep_pca_x9[i],
+                deep_pca_x7[i],
+                deep_pca_u7[i],
+                batch_images_cpu[i])
+                for i in range(pred_cpu.shape[0])
+            ])
 
-        for j, (nodes, connections, node_mask) in enumerate(graphs):
-            # print(nodes[:,:2].shape)
-            # plt.figure(figsize=(8, 6))
-            # plt.imshow(argmax_pred_cpu[j], vmin=0, vmax=2)
+            for j, (nodes, connections, node_mask) in enumerate(graphs):
+                executor.submit(save_graph_data, j, img_file_name, nodes, connections,
+                                node_mask, argmax_pred_cpu, graph_dir, node_mask_dir)
 
-            # color_map = {0:"#ffffff",
-            #           1:"#00BFFF",
-            #           2:"#32CD32"}
-            
-            # colors = [color_map[i] for i in nodes[:,-1]]
+            # for j, (nodes, connections, node_mask) in enumerate(graphs):
+                
+                # print(nodes[:,:2].shape)
+                # plt.figure(figsize=(8, 6))
+                # plt.imshow(argmax_pred_cpu[j], vmin=0, vmax=2)
 
-            # plt.scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
-            # graph_processing.plot_graph_edges(plt, nodes[:,:3], connections)
-            # plt.show()
+                # color_map = {0:"#ffffff",
+                #           1:"#00BFFF",
+                #           2:"#32CD32"}
+                
+                # colors = [color_map[i] for i in nodes[:,-1]]
 
-            # fig, ax = plt.subplots(1,2,figsize=(8, 6))
-            # ax[0].imshow(argmax_pred_cpu[j], vmin=0, vmax=2)
-            # graph_processing.plot_graph_edges(ax[0], nodes[:,:3], connections)
-            # ax[0].scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
+                # plt.scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
+                # graph_processing.plot_graph_edges(plt, nodes[:,:3], connections)
+                # plt.show()
 
-            # ax[1].imshow(labes_cpu[j], vmin=0, vmax=2)
-            # graph_processing.plot_graph_edges(ax[1], nodes[:,:3], connections)
-            # ax[1].scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
-            # plt.show()
+                # fig, ax = plt.subplots(1,2,figsize=(8, 6))
+                # ax[0].imshow(argmax_pred_cpu[j], vmin=0, vmax=2)
+                # graph_processing.plot_graph_edges(ax[0], nodes[:,:3], connections)
+                # ax[0].scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
 
-            deep_fmt = ('%.7f',)*12
-            node_fmt = ('%d', '%d', '%d', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', *deep_fmt, '%d')
-            if nodes.shape[0] != 0:
-                np.savetxt(os.path.join(graph_dir, f"{img_file_name[j]}.nodes"), nodes, delimiter=",", fmt=node_fmt)
-                np.savetxt(os.path.join(graph_dir, f"{img_file_name[j]}.edges"), connections, delimiter=",", fmt='%d')    
-                np.savez_compressed(os.path.join(node_mask_dir, f"{img_file_name[j]}.npz"), image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
-        # save the predictions
-        # for j in range(pred.shape[0]):
-        #     pred_image = pred[j].cpu().numpy().astype('uint8')
-        #     pred_pil = Image.fromarray(pred_image, mode='L')
-        #     pred_pil.save(os.path.join(pred_dir, f'pred_{i * batch_size + j}.png'))
+                # ax[1].imshow(labes_cpu[j], vmin=0, vmax=2)
+                # graph_processing.plot_graph_edges(ax[1], nodes[:,:3], connections)
+                # ax[1].scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
+                # plt.show()
+                # deep_fmt = ('%.7f',)*(4*3)
+                # node_fmt = ('%d', '%d', '%d', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', '%.7f', *deep_fmt, '%d')
+                # if nodes.shape[0] != 0:
+                #     np.savetxt(os.path.join(graph_dir, f"{img_file_name[j]}.nodes"), nodes, delimiter=",", fmt=node_fmt)
+                #     np.savetxt(os.path.join(graph_dir, f"{img_file_name[j]}.edges"), connections, delimiter=",", fmt='%d')    
+                #     np.savez_compressed(os.path.join(node_mask_dir, f"{img_file_name[j]}.npz"), image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
+
+            # save the predictions
+            # for j in range(pred.shape[0]):
+            #     pred_image = pred[j].cpu().numpy().astype('uint8')
+            #     pred_pil = Image.fromarray(pred_image, mode='L')
+            #     pred_pil.save(os.path.join(pred_dir, f'pred_{i * batch_size + j}.png'))
 
 if __name__ == '__main__':
     import time

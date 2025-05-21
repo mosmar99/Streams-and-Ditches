@@ -42,7 +42,8 @@ def join_graph_dfs(graph_dfs):
         edge_df["target"] = person_lookup.reindex(edge_df["target"]).reset_index()["index"]
         edge_df["source"] = person_lookup.reindex(edge_df["source"]).reset_index()["index"]
 
-        edge_df = edge_df.dropna().astype(int)
+        edge_df = edge_df.dropna()
+        edge_df[["target", "source"]] = edge_df[["target", "source"]].astype(int)
 
         node_dfs.append(node_df)
         edge_dfs.append(edge_df)
@@ -133,6 +134,7 @@ def main(log_dir, epochs):
         node_df = pd.read_csv(node_path, header=None, sep=',', names=node_names, na_values='_')
         edge_df = pd.read_csv(edge_path, header=None, sep=',', names=edge_names)
         node_df["file_name"] = graph_name[2]
+        edge_df["file_name"] = graph_name[2]
         # Make graph undirected
         edge_df = pd.concat([edge_df, edge_df.rename(columns={"source": "target", "target": "source"})])
 
@@ -176,11 +178,13 @@ def main(log_dir, epochs):
             
             node_features = node_df[["prob_0", "prob_1", "prob_2", *slope_feature_names, *deep_feats]].values.astype(np.float32) # , *deep_feats
             targets = pd.Categorical(node_df["target"], categories=[0,1,2])
+            edges = edge_df[["source", "target"]]
             targets = pd.get_dummies(targets)
             graph_ids = node_df["graph_id"].values.astype(np.int32)
             file_name = node_df["file_name"]
-
-            processed_graphs.append(((node_features, edge_df, graph_ids, file_name), targets))
+            coordinates = node_df[["node_id", "center_x", "center_y"]]
+            edge_file_name = edge_df["file_name"]
+            processed_graphs.append(((node_features, edges, graph_ids, file_name, coordinates, edge_file_name), targets))
         return processed_graphs
 
     processed_train_graphs = process_graphs(train_node_data, train_edge_data)
@@ -203,6 +207,8 @@ def main(log_dir, epochs):
         output_signature = ((tf.TensorSpec(shape=(None, 20), dtype=tf.float32),
                              tf.TensorSpec(shape=(None, 2), dtype=tf.int32),
                              tf.TensorSpec(shape=(None,), dtype=tf.int32),
+                             tf.TensorSpec(shape=(None,), dtype=tf.string),
+                             tf.TensorSpec(shape=(None,3), dtype=tf.int32),
                              tf.TensorSpec(shape=(None,), dtype=tf.string)
                             ),
                             tf.TensorSpec(shape=(None, 3), dtype=tf.int32))
@@ -512,13 +518,15 @@ def main(log_dir, epochs):
     tot_tn_u = np.zeros((3,))
     tot_fn_u = np.zeros((3,))
 
-    for (node_features, edge_df, graph_ids, file_name), targets in tqdm(test_dataset):
+    for (node_features, edge_df, graph_ids, file_name, coords, edge_file_name), targets in tqdm(test_dataset):
         predictions = gat_model((node_features, edge_df))
 
         _, nodes_list = split_on_file(node_features, file_name)
 
         files_in_combined, predictions_list = split_on_file(predictions, file_name)
-        for file_id, graph_preds, nodes in zip(files_in_combined, predictions_list, nodes_list):
+        _, coordinates = split_on_file(coords, file_name)
+        _, edges = split_on_file(edge_df, edge_file_name)
+        for file_id, graph_preds, nodes, coordinates, edge in zip(files_in_combined, predictions_list, nodes_list, coordinates, edges):
             rec_data_dir = os.path.join("./logs/m1/test_gat_more_all/reconstruction", f"{file_id.decode('utf-8')}.npz")
             rec_data = np.load(rec_data_dir)
             node_mask = rec_data["image"]
@@ -531,15 +539,16 @@ def main(log_dir, epochs):
             gat_pred = graph_processing.graph_to_image(np.argmax(graph_preds.numpy(), axis=1), node_mask)
             # unet_g_pred = graph_processing.graph_to_image(np.argmax(nodes[:,:4], axis=1), node_mask)
             
-            # vmin = 0
-            # vmax = 2
-            # fig, ax = plt.subplots(1,3)
-            # ax[0].imshow(unet_pred, vmin=vmin, vmax=vmax)
-            # ax[0].set_title("Unet Prediction")
-            # ax[1].imshow(gat_pred, vmin=vmin, vmax=vmax)
-            # ax[1].set_title("Gat Prediction")
-            # ax[2].imshow(gt, vmin=vmin, vmax=vmax)
-            # ax[2].set_title("Ground Truth")
+            vmin = 0
+            vmax = 2
+            fig, ax = plt.subplots(1,3)
+            ax[0].imshow(unet_pred, vmin=vmin, vmax=vmax)
+            ax[0].set_title("Unet Prediction")
+            ax[1].imshow(graph_processing.color_segments_rand(node_mask))
+            ax[1].set_title("Segmentation")
+            ax[2].imshow(graph_processing.color_segments_rand(node_mask), vmin=vmin, vmax=vmax)
+            graph_processing.plot_graph_edges(ax[2], coordinates.numpy(), edge)
+            ax[2].set_title("Graph")
 
             plt.show()
 

@@ -2,16 +2,16 @@ import os
 import pandas as pd
 import torch
 import metrics
-from torch.optim import Adam
+from torch.optim import Adam, lr_scheduler
 from torch import nn
 import torch.nn.functional as F
-from torch.nn import CrossEntropyLoss, Linear, Identity
+from torch.nn import CrossEntropyLoss, Linear
 import numpy as np
 from tqdm import tqdm
 from torch_geometric.data import Data, Batch
 from torch_geometric.loader import DataLoader
 from sklearn.model_selection import train_test_split
-from torch_geometric.nn import GATv2Conv, GATConv, global_mean_pool, global_add_pool, global_max_pool
+from torch_geometric.nn import GATv2Conv, GATConv, global_mean_pool, global_add_pool, global_max_pool, GraphNorm
 
 def read_graphs(data_dir, num_deep_feats):
     def read_file_list(file_path):
@@ -126,11 +126,16 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         self.num_classes = num_classes
 
         self.preprocess = Linear(in_channels, hidden_channels_gnn*heads)
+        self.gn_pre = GraphNorm(hidden_channels_gnn * heads)
+
         self.conv1 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
+        self.gn1 = GraphNorm(hidden_channels_gnn * heads)
 
         self.conv2 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
+        self.gn2 = GraphNorm(hidden_channels_gnn * heads)
 
-        self.conv3 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
+        # self.conv3 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
+        # self.gn3 = GraphNorm(hidden_channels_gnn * heads)
 
         self.conv4 = GATv2Conv(hidden_channels_gnn * heads, out_channels_gnn, heads=heads, concat=False, dropout=dropout_rate, residual=True)
 
@@ -138,18 +143,23 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
 
     def forward(self, x, edge_index, batch):
         x = self.preprocess(x)
+        x = self.gn_pre(x, batch)
         x = F.relu(x)
+
         x = self.conv1(x, edge_index)
+        x = self.gn1(x, batch)
         x = F.elu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
         x = self.conv2(x, edge_index)
+        x = self.gn2(x, batch)
         x = F.elu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
-        x = self.conv3(x, edge_index)
-        x = F.elu(x)
-        x = F.dropout(x, p=self.dropout_rate, training=self.training)
+        # x = self.conv3(x, edge_index)
+        # x = self.gn3(x, batch)
+        # x = F.elu(x)
+        # x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
         x = self.conv4(x, edge_index)
         x = F.elu(x)
@@ -214,14 +224,14 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
     def fit(self, train_loader, optimizer, criterion, epochs, device, val_loader=None,
             lr_scheduler=None, checkpoint_handlers=None, metrics_handler=None, log_dir=None):
 
-        history = {'train_loss': [], 'train_metrics': []}#, 'val_loss': [], 'val_metrics': []}
+        history = {'train_loss': [], 'train_metrics': [], 'val_loss': [], 'val_metrics': []}
 
         names = []
         if log_dir != None:
             with open(os.path.join(log_dir, "training.log"), 'w') as f:
-                names = ["LOSS"]#, "VAL_LOSS"]
+                names = ["LOSS", "VAL_LOSS"]
                 names += metrics_handler.labels()
-                # names += metrics_handler.labels(prefix="VAL_")
+                names += metrics_handler.labels(prefix="VAL_")
                 f.write(f'{",".join(names)}\n')
 
         for epoch in range(1, epochs + 1):
@@ -231,27 +241,27 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
 
             train_loss, train_metrics = self._train_epoch(train_loader, optimizer, criterion, device, metrics_handler=metrics_handler)
 
-            # val_loss, val_metrics = self._validate_epoch(val_loader, criterion, device, metrics_handler=metrics_handler)
-            val_loss = np.inf
+            val_loss, val_metrics = self._validate_epoch(val_loader, criterion, device, metrics_handler=metrics_handler)
+
             if log_dir != None:
                 with open(os.path.join(log_dir, "training.log"), 'a') as f:
                     results = train_metrics
-                    # results.update(val_metrics)
+                    results.update(val_metrics)
                     results["LOSS"] = train_loss
-                    # results["VAL_LOSS"] = val_loss
+                    results["VAL_LOSS"] = val_loss
                     result_strings = [f"{results[name]:.4f}" for name in names]
                     f.write(f'{",".join(result_strings)}\n')   
 
             train_metrics.keys()
             print(f"Train Loss (node-avg): {train_loss:.4f}")
-            # print(f"Val Loss (node-avg): {val_loss:.4f}")
+            print(f"Val Loss (node-avg): {val_loss:.4f}")
 
             history['train_loss'].append(train_loss)
             history['train_metrics'].append(train_metrics)
-            # history['val_loss'].append(val_loss)
-            # history['val_metrics'].append(val_metrics)
+            history['val_loss'].append(val_loss)
+            history['val_metrics'].append(val_metrics)
 
-            if lr_scheduler and val_loader!=None:
+            if lr_scheduler:
                 if isinstance(lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     lr_scheduler.step(val_loss)
                 else:
@@ -303,18 +313,17 @@ def main():
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    data_dir = './logs/m1/test_gat_more_all/graphs'
-    num_deep_feats = 12
+    data_dir = './logs/testing/graphs'
+    num_deep_feats = 3*4
     log_dir = os.path.join('./logs/torch_gat/', timestamp)
     os.makedirs(log_dir, exist_ok=True)
 
-    train_datas, test_datas = read_graphs(data_dir, num_deep_feats)
+    temp_datas, test_datas = read_graphs(data_dir, num_deep_feats)
 
-    # temp_data, test_data = train_test_split(datas, test_size=0.2, random_state=SEED)
-    # train_data, val_data = train_test_split(temp_data, test_size=0.1, random_state=SEED)
+    train_datas, val_datas = train_test_split(temp_datas, test_size=0.1, random_state=SEED)
 
     train_loader = DataLoader(train_datas, batch_size=BATCH_SIZE, shuffle=True)
-    # val_loader = DataLoader(val_data, batch_size=BATCH_SIZE)
+    val_loader = DataLoader(val_datas, batch_size=BATCH_SIZE)
     test_loader = DataLoader(test_datas, batch_size=BATCH_SIZE)
 
     metrics_list = [
@@ -329,9 +338,9 @@ def main():
     gnn_hidden_dim = 128
     gnn_output_dim = 64
     num_graph_classes = 3
-    heads=4
-    learning_rate = 8e-4
-    weight_decay = 0.005
+    heads=6
+    learning_rate = 0.00025
+    weight_decay = 0.0001
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
@@ -348,24 +357,29 @@ def main():
     checkpoints = [MinCheckpoint(log_dir), Checkpoint(log_dir)]
     optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    # class_weights = torch.tensor([1.2,1.0,2.8], device=device)
-    criterion = CrossEntropyLoss()
+    sceduler = lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=8)
+
+    class_weights = torch.tensor([1.0,1.2,1.6], device=device)
+    criterion = CrossEntropyLoss(weight=class_weights)
+
 
     history = model.fit(
         train_loader,
         optimizer,
         criterion,
-        epochs=20, # Small number of epochs for example
+        epochs=150,
+        val_loader=val_loader,
         device=device,
         checkpoint_handlers=checkpoints,
         metrics_handler=metrics_handler,
-        log_dir=log_dir
+        log_dir=log_dir,
+        lr_scheduler=sceduler
     )
 
-    # model.load_state_dict(torch.load("./logs/torch_gat/20250519_154852/gat_model_ckpt.pth", map_location=device))
+    # model.load_state_dict(torch.load("./logs/torch_gat/20250521_005621/gat_model_ckpt.pth", map_location=device))
 
     model.eval()
-    reconstruction_data_base_dir = "./logs/m1/test_gat_more_all/reconstruction"
+    reconstruction_data_base_dir = "./logs/testing/reconstruction"
     gt_data_base_dir = "./data/05m_chips/labels"
 
     img_metrics_list = [
