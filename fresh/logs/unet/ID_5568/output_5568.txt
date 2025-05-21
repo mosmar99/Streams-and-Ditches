@@ -1,0 +1,10 @@
+Beginning to load data...
+ -- Train dataset size: 4134 / 4593 ~ 0.9
+ -- Test dataset size: 459 / 4593 ~ 0.1
+ -- Created DataLoaders with batch size: 9
+
+Starting UNet Training...
+  Epoch [1/20], Batch [10/460], Loss: 0.7288
+  Epoch [1/20], Batch [20/460], Loss: 0.7049
+  Epoch [1/20], Batch [30/460], Loss: 0.6910
+  Epoch [1/20], Batch [40/460], Loss: 0.6507

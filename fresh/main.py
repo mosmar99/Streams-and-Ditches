@@ -19,7 +19,7 @@ def main():
     k = 10
     IMG_CHANNELS = 1
     NUM_CLASSES = 3
-    batch_size_unet = 8
+    batch_size_unet = 9
     num_epochs_unet = 20
     learning_rate_unet = 0.001
     unet_logdir = os.path.join(read_logdir(), 'checkpoints')

@@ -1,5 +1,6 @@
 # workspace/scripts/train.py
 import os
+import time 
 import torch
 import numpy as np
 from datetime import datetime
@@ -28,6 +29,8 @@ def train_unet(model, train_loader, criterion, optimizer, num_epochs, device,
     with open(log_file_path, 'a') as f:
         f.write(f"Training started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Device: {device}, Num Epochs: {num_epochs}, Model: {model.__class__.__name__}\n")
+        f.write(f"Batch Size: {train_loader.batch_size}, Learning Rate: {optimizer.param_groups[0]['lr']}\n")
+        f.write(f"Loss Function: {criterion.__class__.__name__}, Optimizer: {optimizer.__class__.__name__}\n")
         f.write("Epoch, AvgTrainLoss, \n")
     
     total_batches_per_epoch = len(train_loader)
@@ -36,6 +39,7 @@ def train_unet(model, train_loader, criterion, optimizer, num_epochs, device,
         model.train()
         running_loss = 0.0
         
+        start_time = time.time()
         for i, (images, masks) in enumerate(train_loader):
             current_batch_num = i + 1
             images = images.to(device)
@@ -51,17 +55,21 @@ def train_unet(model, train_loader, criterion, optimizer, num_epochs, device,
             optimizer.step()
             current_batch_loss = loss.item()
             running_loss += current_batch_loss * images.size(0)
-            print(f"  Epoch [{epoch+1}/{num_epochs}], Batch [{current_batch_num}/{total_batches_per_epoch}], Loss: {current_batch_loss:.4f}", flush=True)
+            if current_batch_num % 10 == 0:
+                print(f"  Epoch [{epoch+1}/{num_epochs}], Batch [{current_batch_num}/{total_batches_per_epoch}], Loss: {current_batch_loss:.4f}", flush=True)
 
+        end_time = time.time()
         epoch_loss = running_loss / len(train_loader.dataset)
         print(f"--- Epoch [{epoch+1}/{num_epochs}] complete. Average Training Loss: {epoch_loss:.4f} ---", flush=True)
+        print(f"--- Time taken for epoch: {end_time - start_time:.2f} seconds ---", flush=True)
         checkpoint_saver.save(model.state_dict(), epoch_loss)
 
-        print("UNet training finished.", flush=True)
         with open(log_file_path, 'a') as f:
-            f.write(f"Training finished at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"{epoch+1}, {epoch_loss:.6f}, \n")
             f.flush()
-        return model
 
-    print("UNet training finished.")
+    print("UNet training finished.", flush=True)
+    with open(log_file_path, 'a') as f:
+        f.write(f"Training finished at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.flush()
     return model
