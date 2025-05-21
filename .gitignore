@@ -5,3 +5,4 @@
 *__pycache__
 /fresh/data/processed
 /fresh/data/raw
+*.png
