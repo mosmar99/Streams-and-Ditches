@@ -1,4 +1,3 @@
-# workspace/utils/metrics.py
 import torch
 
 def calculate_tp_fp_fn_per_class(preds_flat, targets_flat, num_classes):
@@ -60,3 +59,66 @@ def calculate_precision_recall_per_class(tps, fps, fns, epsilon=1e-7):
         recalls.append(recall_c)
         
     return precisions, recalls
+
+def calculate_iou_per_class(tps, fps, fns, epsilon=1e-7):
+    """
+    Calculates Intersection over Union (IoU) or Jaccard Index per class.
+
+    Args:
+        tps (list): List of True Positives for each class.
+        fps (list): List of False Positives for each class.
+        fns (list): List of False Negatives for each class.
+        epsilon (float): Small value to avoid division by zero.
+
+    Returns:
+        list: ious_per_class - List of IoU scores for each class.
+    """
+    num_classes = len(tps)
+    ious_per_class = []
+
+    for c in range(num_classes):
+        intersection = tps[c]
+        union = tps[c] + fps[c] + fns[c]
+        iou_c = intersection / (union + epsilon)
+        ious_per_class.append(iou_c)
+        
+    return ious_per_class
+
+def calculate_dice_per_class(tps, fps, fns, epsilon=1e-7):
+    """
+    Calculates Dice Coefficient (F1 Score) per class.
+
+    Args:
+        tps (list): List of True Positives for each class.
+        fps (list): List of False Positives for each class.
+        fns (list): List of False Negatives for each class.
+        epsilon (float): Small value to avoid division by zero.
+
+    Returns:
+        list: dice_scores_per_class - List of Dice scores for each class.
+    """
+    num_classes = len(tps)
+    dice_scores_per_class = []
+
+    for c in range(num_classes):
+        dice_c = (2 * tps[c]) / (2 * tps[c] + fps[c] + fns[c] + epsilon)
+        dice_scores_per_class.append(dice_c)
+        
+    return dice_scores_per_class
+
+def calculate_overall_pixel_accuracy(preds_flat, targets_flat, epsilon=1e-7):
+    """
+    Calculates overall pixel accuracy.
+
+    Args:
+        preds_flat (torch.Tensor): Flattened tensor of predicted class indices.
+        targets_flat (torch.Tensor): Flattened tensor of ground truth class indices.
+        epsilon (float): Small value to avoid division by zero if total_pixels is 0 (unlikely).
+
+    Returns:
+        float: Overall pixel accuracy.
+    """
+    correct_pixels = (preds_flat == targets_flat).sum().item()
+    total_pixels = targets_flat.numel()
+    accuracy = correct_pixels / (total_pixels + epsilon)
+    return accuracy

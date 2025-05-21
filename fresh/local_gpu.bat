@@ -13,6 +13,8 @@ mkdir "%JOB_LOG_DIR%"
 REM Activate your conda environment
 call conda activate dl
 
+set CUDA_LAUNCH_BLOCKING=1
+
 REM Print the current task information
 echo Now processing task on %COMPUTERNAME% at %date% %time%
 

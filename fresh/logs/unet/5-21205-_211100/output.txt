@@ -1,0 +1,36 @@
+Beginning to load data...
+ -- Train dataset size: 4134 / 4593 ~ 0.9
+ -- Test dataset size: 459 / 4593 ~ 0.1
+ -- Created DataLoaders with batch size: 9
+
+Starting UNet Training...
+  Epoch [1/20], Batch [10/460], Loss: 0.8022
+  Epoch [1/20], Batch [20/460], Loss: 0.7338
+  Epoch [1/20], Batch [30/460], Loss: 0.7236
+  Epoch [1/20], Batch [40/460], Loss: 0.6841
+  Epoch [1/20], Batch [50/460], Loss: 0.6564
+  Epoch [1/20], Batch [60/460], Loss: 0.6548
+  Epoch [1/20], Batch [70/460], Loss: 0.5911
+  Epoch [1/20], Batch [80/460], Loss: 0.5688
+  Epoch [1/20], Batch [90/460], Loss: 0.5295
+  Epoch [1/20], Batch [100/460], Loss: 0.5134
+  Epoch [1/20], Batch [110/460], Loss: 0.4767
+  Epoch [1/20], Batch [120/460], Loss: 0.4699
+  Epoch [1/20], Batch [130/460], Loss: 0.4821
+  Epoch [1/20], Batch [140/460], Loss: 0.4864
+  Epoch [1/20], Batch [150/460], Loss: 0.4491
+  Epoch [1/20], Batch [160/460], Loss: 0.4646
+  Epoch [1/20], Batch [170/460], Loss: 0.4935
+  Epoch [1/20], Batch [180/460], Loss: 0.4690
+  Epoch [1/20], Batch [190/460], Loss: 0.4451
+  Epoch [1/20], Batch [200/460], Loss: 0.4425
+  Epoch [1/20], Batch [210/460], Loss: 0.4303
+  Epoch [1/20], Batch [220/460], Loss: 0.4257
+  Epoch [1/20], Batch [230/460], Loss: 0.4690
+  Epoch [1/20], Batch [240/460], Loss: 0.4458
+  Epoch [1/20], Batch [250/460], Loss: 0.4639
+  Epoch [1/20], Batch [260/460], Loss: 0.4886
+  Epoch [1/20], Batch [270/460], Loss: 0.4730
+  Epoch [1/20], Batch [280/460], Loss: 0.4227
+  Epoch [1/20], Batch [290/460], Loss: 0.4536
+  Epoch [1/20], Batch [300/460], Loss: 0.4439
