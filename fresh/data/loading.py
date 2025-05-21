@@ -35,10 +35,10 @@ class UNetDataset(Dataset):
         # Apply augmentations if provided
         if self.augmentations is not None:
             augmented_images, augmented_labels = self.augmentations.apply_augmentations(image, label)
-            return augmented_images[augmentation_idx], augmented_labels[augmentation_idx]
+            return augmented_images[augmentation_idx], augmented_labels[augmentation_idx], file_name
 
         # If no augmentations, return the original
-        return transforms.ToTensor()(image), transforms.ToTensor()(label)
+        return transforms.ToTensor()(image), transforms.ToTensor()(label), file_name
 
 def load_data(batch_size,
               num_workers=7,

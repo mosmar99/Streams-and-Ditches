@@ -20,9 +20,11 @@ class MinCheckpoint():
             torch.save(model_state_dict, os.path.join(self.logdir, self.model_name))
 
 def train_unet(model, train_loader, criterion, optimizer, num_epochs, device, 
-               logdir='checkpoints/', model_name='unet_ckpt.pth', val_loader=None):
+               logdir='checkpoints/', model_name='unet_ckpt.pth'):
     
-    checkpoint_saver = MinCheckpoint(logdir=logdir, model_name=model_name)
+    checkpoint_dir = os.path.join(logdir, 'checkpoints')
+    checkpoint_saver = MinCheckpoint(logdir=checkpoint_dir, model_name=model_name)
+    
     model.to(device)
     
     log_file_path = os.path.join(logdir, 'training.log')
@@ -40,7 +42,7 @@ def train_unet(model, train_loader, criterion, optimizer, num_epochs, device,
         running_loss = 0.0
         
         start_time = time.time()
-        for i, (images, masks) in enumerate(train_loader):
+        for i, (images, masks, _) in enumerate(train_loader):
             current_batch_num = i + 1
             images = images.to(device)
             masks = masks.to(device)

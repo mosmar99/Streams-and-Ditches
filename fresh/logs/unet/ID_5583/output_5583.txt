@@ -1,0 +1,84 @@
+Beginning to load data...
+ -- Train dataset size: 4134 / 4593 ~ 0.9
+ -- Test dataset size: 459 / 4593 ~ 0.1
+ -- Created DataLoaders with batch size: 8
+
+Starting UNet Training...
+  Epoch [1/1], Batch [10/517], Loss: 0.7989
+  Epoch [1/1], Batch [20/517], Loss: 0.7777
+  Epoch [1/1], Batch [30/517], Loss: 0.7320
+  Epoch [1/1], Batch [40/517], Loss: 0.7455
+  Epoch [1/1], Batch [50/517], Loss: 0.7074
+  Epoch [1/1], Batch [60/517], Loss: 0.6875
+  Epoch [1/1], Batch [70/517], Loss: 0.6679
+  Epoch [1/1], Batch [80/517], Loss: 0.6415
+  Epoch [1/1], Batch [90/517], Loss: 0.6484
+  Epoch [1/1], Batch [100/517], Loss: 0.6107
+  Epoch [1/1], Batch [110/517], Loss: 0.6199
+  Epoch [1/1], Batch [120/517], Loss: 0.5978
+  Epoch [1/1], Batch [130/517], Loss: 0.5559
+  Epoch [1/1], Batch [140/517], Loss: 0.5492
+  Epoch [1/1], Batch [150/517], Loss: 0.5634
+  Epoch [1/1], Batch [160/517], Loss: 0.5305
+  Epoch [1/1], Batch [170/517], Loss: 0.4982
+  Epoch [1/1], Batch [180/517], Loss: 0.4912
+  Epoch [1/1], Batch [190/517], Loss: 0.4866
+  Epoch [1/1], Batch [200/517], Loss: 0.4843
+  Epoch [1/1], Batch [210/517], Loss: 0.5179
+  Epoch [1/1], Batch [220/517], Loss: 0.4564
+  Epoch [1/1], Batch [230/517], Loss: 0.4656
+  Epoch [1/1], Batch [240/517], Loss: 0.4498
+  Epoch [1/1], Batch [250/517], Loss: 0.5010
+  Epoch [1/1], Batch [260/517], Loss: 0.4347
+  Epoch [1/1], Batch [270/517], Loss: 0.4844
+  Epoch [1/1], Batch [280/517], Loss: 0.5359
+  Epoch [1/1], Batch [290/517], Loss: 0.4393
+  Epoch [1/1], Batch [300/517], Loss: 0.4294
+  Epoch [1/1], Batch [310/517], Loss: 0.4728
+  Epoch [1/1], Batch [320/517], Loss: 0.4706
+  Epoch [1/1], Batch [330/517], Loss: 0.4557
+  Epoch [1/1], Batch [340/517], Loss: 0.4580
+  Epoch [1/1], Batch [350/517], Loss: 0.5179
+  Epoch [1/1], Batch [360/517], Loss: 0.4417
+  Epoch [1/1], Batch [370/517], Loss: 0.4334
+  Epoch [1/1], Batch [380/517], Loss: 0.4516
+  Epoch [1/1], Batch [390/517], Loss: 0.4326
+  Epoch [1/1], Batch [400/517], Loss: 0.4310
+  Epoch [1/1], Batch [410/517], Loss: 0.4684
+  Epoch [1/1], Batch [420/517], Loss: 0.4713
+  Epoch [1/1], Batch [430/517], Loss: 0.4159
+  Epoch [1/1], Batch [440/517], Loss: 0.4237
+  Epoch [1/1], Batch [450/517], Loss: 0.4258
+  Epoch [1/1], Batch [460/517], Loss: 0.4154
+  Epoch [1/1], Batch [470/517], Loss: 0.4258
+  Epoch [1/1], Batch [480/517], Loss: 0.4536
+  Epoch [1/1], Batch [490/517], Loss: 0.4270
+  Epoch [1/1], Batch [500/517], Loss: 0.4538
+  Epoch [1/1], Batch [510/517], Loss: 0.4210
+--- Epoch [1/1] complete. Average Training Loss: 0.5196 ---
+--- Time taken for epoch: 315.21 seconds ---
+ -- Updated Checkpoint: inf > 0.519645
+UNet training finished.
+UNet training process completed.
+Starting testing on 459 images...
+  Batch [10/58], Loss: 0.4157
+  Batch [20/58], Loss: 0.4003
+  Batch [30/58], Loss: 0.4182
+  Batch [40/58], Loss: 0.4485
+  Batch [50/58], Loss: 0.4598
+--- Testing complete. Average Test Loss: 0.4378 ---
+--- Time taken for testing: 12.46 seconds ---
+Overall Pixel Accuracy: 0.9911
+Mean IoU: 0.5103
+Mean Dice: 0.5806
+Mean Precision: 0.5840
+Mean Recall: 0.5825
+
+--- Per-Class Metrics ---
+Class | Precision | Recall    | IoU       | Dice
+0     | 0.9961    | 0.9960    | 0.9920    | 0.9960
+1     | 0.6904    | 0.6367    | 0.4953    | 0.6625
+2     | 0.0655    | 0.1149    | 0.0435    | 0.0834
+UNet testing finished.
+UNet testing process completed.
+Test Metrics: {'avg_test_loss': 0.4377891503128351, 'overall_pixel_accuracy': 0.9911275642701516, 'mean_iou': np.float64(0.5102825119568869), 'mean_dice': np.float64(0.5806247845157474), 'mean_precision': np.float64(0.5839758641389534), 'mean_recall': np.float64(0.5825227007101006), 'per_class_iou': [0.9920470058154023, 0.49528224123804815, 0.043518288817210087], 'per_class_dice': [0.9960076272490658, 0.6624598722284958, 0.0834068540696809], 'per_class_precision': [0.9960506402253674, 0.6904227987050957, 0.06545415348639738], 'per_class_recall': [0.9959646179875065, 0.63667384105955, 0.11492964308324542]}

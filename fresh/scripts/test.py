@@ -2,6 +2,7 @@ import os
 import time
 import torch
 import numpy as np
+import torchvision.transforms.functional as TF
 from datetime import datetime
 from models.unet import add_padding, remove_padding
 from utils.metrics import (
@@ -39,7 +40,7 @@ def test_unet(model, test_loader, criterion, device, num_classes, checkpoint_pat
     all_pred_masks_flat = []
     all_true_masks_flat = []
     
-    log_file_path = os.path.join(logdir, 'testing_metrics.log')
+    log_file_path = os.path.join(output_dir, 'testing_metrics.log')
     with open(log_file_path, 'w') as f:
         f.write(f"Testing started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"Device: {device}, Model: {model.__class__.__name__}\n")
@@ -47,13 +48,13 @@ def test_unet(model, test_loader, criterion, device, num_classes, checkpoint_pat
             f.write(f"Checkpoint: {checkpoint_path}\n")
         f.write(f"Batch Size: {test_loader.batch_size}\n")
         f.write(f"Loss Function: {criterion.__class__.__name__}\n")
-        f.write("Batch, BatchLoss\n") # Header for per-batch loss
+        f.write("Batch, BatchLoss\n")
 
     print(f"Starting testing on {len(test_loader.dataset)} images...")
     start_time = time.time()
 
     with torch.no_grad(): # Disable gradient calculations for testing
-        for i, (images, masks) in enumerate(test_loader):
+        for i, (images, masks, filenames) in enumerate(test_loader):
             current_batch_num = i + 1
             images = images.to(device)
             masks = masks.to(device) # Ground truth masks
@@ -83,10 +84,16 @@ def test_unet(model, test_loader, criterion, device, num_classes, checkpoint_pat
 
             # Optional: Save predicted masks as images
             if output_dir:
+                mask_image_save_dir = os.path.join(output_dir, "imgs")
+                os.makedirs(mask_image_save_dir, exist_ok=True)
                 for k in range(pred_mask_indices.size(0)):
-                    pred_img = TF.to_pil_image(pred_mask_indices[k].byte().cpu() * (255 // (num_classes -1 if num_classes > 1 else 1) )) 
-                    image_idx_in_batch = i * test_loader.batch_size + k 
-                    pred_img.save(os.path.join(output_dir, f"pred_mask_{image_idx_in_batch:04d}.png"))
+                    original_filename = filenames[k]
+                    base, _ = os.path.splitext(original_filename)
+                    pred_mask_filename = f"{base}.png"
+                    scale_factor = 255 // (num_classes - 1 if num_classes > 1 else 1)
+                    pred_img_tensor = pred_mask_indices[k].byte().cpu() * scale_factor
+                    pred_img_tensor = TF.to_pil_image(pred_img_tensor)
+                    pred_img_tensor.save(os.path.join(mask_image_save_dir, pred_mask_filename))
 
     end_time = time.time()
     avg_test_loss = total_loss / len(test_loader.dataset)

@@ -1,0 +1,7 @@
+Training started at: 2025-05-21 21:59:24
+Device: cuda, Num Epochs: 1, Model: UNet
+Batch Size: 8, Learning Rate: 0.0008
+Loss Function: TverskyLoss, Optimizer: Adam
+Epoch, AvgTrainLoss, 
+1, 0.519645, 
+Training finished at: 2025-05-21 22:04:39
