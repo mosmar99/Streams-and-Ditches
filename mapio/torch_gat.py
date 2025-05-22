@@ -7,19 +7,26 @@ from torch import nn
 import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss, Linear
 import numpy as np
+import pickle as pk
 from tqdm import tqdm
 from torch_geometric.data import Data, Batch
 from torch_geometric.loader import DataLoader
 from sklearn.model_selection import train_test_split
 from torch_geometric.nn import GATv2Conv, GATConv, global_mean_pool, global_add_pool, global_max_pool, GraphNorm
 
-def read_graphs(data_dir, num_deep_feats):
+from torch_geometric.utils import to_scipy_sparse_matrix, get_laplacian
+from scipy.sparse.linalg import eigsh
+import torch_geometric.transforms as T
+
+def read_graphs(data_path, num_deep_feats):
     def read_file_list(file_path):
         with open(file_path, 'r') as f:
             return [line.strip() for line in f.readlines()]
         
     def normalize_coords(data, minimum, coord_range):
         return (data - minimum) / coord_range
+
+    data_dir = os.path.join(data_path, "graphs")
 
     train_fnames_path = './data/05m_folds_mapio/r1/f1/train.dat'
     test_fnames_path = './data/05m_folds_mapio/r1/f1/test.dat'
@@ -39,8 +46,11 @@ def read_graphs(data_dir, num_deep_feats):
 
     deep_feats = [f"deep_{i}" for i in range(num_deep_feats)]
     slope_feature_names = ["slope_min", "slope_mean", "slope_max", "slope_std", "area"]
-    node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *slope_feature_names, *deep_feats, "target"]
+    twi_flowacc_feature_names = ["twi_min", "twi_mean", "twi_max", "twi_std", "flow_acc_min", "flow_acc_sum", "flow_acc_max", "flow_acc_std"]
+    node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *slope_feature_names, *twi_flowacc_feature_names, *deep_feats, "target"]
     edge_names = ["target", "source"]
+
+    scaler = pk.load(open(os.path.join(data_path,"nodes_scaler.pkl"),'rb'))
 
     # --- Load TRAIN/TEST Data ---
     all_node_data = []
@@ -49,12 +59,16 @@ def read_graphs(data_dir, num_deep_feats):
         node_path = os.path.join(data_dir, f'{graph_name[0]}')
         edge_path = os.path.join(data_dir, f'{graph_name[1]}')
         node_df = pd.read_csv(node_path, header=None, sep=',', names=node_names, na_values='_', dtype=np.float32)
+
+        scaler.feature_names_in_ = node_names
+        features_to_scale = [*slope_feature_names, *twi_flowacc_feature_names, *deep_feats] # , *deep_feats
+        node_df[features_to_scale]= pd.DataFrame(scaler.transform(node_df), columns=node_names)[features_to_scale]
+
         edge_df = pd.read_csv(edge_path, header=None, sep=',', names=edge_names, dtype=np.int32)
         node_df["file_name"] = graph_name[2]
         # Make graph undirected
         edge_df = pd.concat([edge_df, edge_df.rename(columns={"source": "target", "target": "source"})])
 
-        node_df["area"] = normalize_coords(node_df["area"], minimum=10, coord_range=100)
 
         # # Add self-loops to the edge DataFrame
         # node_ids = node_df['node_id'].unique()
@@ -78,7 +92,7 @@ def read_graphs(data_dir, num_deep_feats):
         edge_index = torch.tensor(edge_df[['source', 'target']].values.T, dtype=torch.long)
 
         # Extract node features (excluding 'node_id', 'center_x', 'center_y', 'file_name', 'target')
-        feature_columns = ["prob_0", "prob_1", "prob_2", *slope_feature_names, *deep_feats] # , *slope_feature_names
+        feature_columns = ["prob_0", "prob_1", "prob_2", *slope_feature_names, *twi_flowacc_feature_names, *deep_feats] # , *deep_feats
         x = torch.tensor(node_df[feature_columns].values, dtype=torch.float32)
 
         # Extract target (optional: for node classification/regression)
@@ -116,7 +130,7 @@ class Checkpoint():
 
     def save(self, model, loss):
         torch.save(model.state_dict(), os.path.join(self.logdir, 'gat_model_ckpt.pth'))
-
+    
 class GATv2Net_NodeClassifier(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels_gnn, out_channels_gnn,
                  num_classes, heads=11,
@@ -137,7 +151,12 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         # self.conv3 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
         # self.gn3 = GraphNorm(hidden_channels_gnn * heads)
 
-        self.conv4 = GATv2Conv(hidden_channels_gnn * heads, out_channels_gnn, heads=heads, concat=False, dropout=dropout_rate, residual=True)
+        self.conv4 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=False, dropout=dropout_rate, residual=True)
+        self.gn_4 = GraphNorm(out_channels_gnn)
+
+        self.olin1 = torch.nn.Linear(hidden_channels_gnn, hidden_channels_gnn)
+
+        self.olin2 = torch.nn.Linear(hidden_channels_gnn, out_channels_gnn)
 
         self.node_classifier = torch.nn.Linear(out_channels_gnn, num_classes)
 
@@ -164,6 +183,12 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         x = self.conv4(x, edge_index)
         x = F.elu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
+
+        x = self.olin1(x)
+        x = F.relu(x)
+
+        x = self.olin2(x)
+        x = F.relu(x)
 
         x_node_logits = self.node_classifier(x)
 
@@ -313,12 +338,12 @@ def main():
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    data_dir = './logs/testing/graphs'
+    data_path = './logs/testing_twi'
     num_deep_feats = 3*4
     log_dir = os.path.join('./logs/torch_gat/', timestamp)
     os.makedirs(log_dir, exist_ok=True)
 
-    temp_datas, test_datas = read_graphs(data_dir, num_deep_feats)
+    temp_datas, test_datas = read_graphs(data_path, num_deep_feats)
 
     train_datas, val_datas = train_test_split(temp_datas, test_size=0.1, random_state=SEED)
 
@@ -334,13 +359,13 @@ def main():
     
     metrics_handler = metrics.MetricsList(metrics_list)
 
-    num_node_features = 20
+    num_node_features = 28
     gnn_hidden_dim = 128
     gnn_output_dim = 64
     num_graph_classes = 3
-    heads=6
-    learning_rate = 0.00025
-    weight_decay = 0.0001
+    heads=4
+    learning_rate = 1e-3
+    weight_decay = 5e-6
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
@@ -359,15 +384,16 @@ def main():
 
     sceduler = lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=8)
 
-    class_weights = torch.tensor([1.0,1.2,1.6], device=device)
-    criterion = CrossEntropyLoss(weight=class_weights)
+    criterion = TverskyLoss()
+    # class_weights = torch.tensor([1.0,1.2,1.6], device=device)
+    # criterion = CrossEntropyLoss(weight=class_weights)
 
 
     history = model.fit(
         train_loader,
         optimizer,
         criterion,
-        epochs=150,
+        epochs=50,
         val_loader=val_loader,
         device=device,
         checkpoint_handlers=checkpoints,
@@ -376,10 +402,10 @@ def main():
         lr_scheduler=sceduler
     )
 
-    # model.load_state_dict(torch.load("./logs/torch_gat/20250521_005621/gat_model_ckpt.pth", map_location=device))
+    # model.load_state_dict(torch.load("./logs/torch_gat/20250521_201526/gat_model_ckpt.pth", map_location=device))
 
     model.eval()
-    reconstruction_data_base_dir = "./logs/testing/reconstruction"
+    reconstruction_data_base_dir = os.path.join(data_path, "reconstruction")
     gt_data_base_dir = "./data/05m_chips/labels"
 
     img_metrics_list = [
@@ -406,9 +432,8 @@ def main():
                 num_nodes_in_graph = batch_data.ptr[i+1] - batch_data.ptr[i]
                 
                 # Get predictions for the current graph
-                graph_node_preds_classes_tensor = node_predictions_logits[current_node_idx : current_node_idx + num_nodes_in_graph]
                 graph_node_preds_classes_tensor_argmax = node_predicted_classes[current_node_idx : current_node_idx + num_nodes_in_graph]
-                
+                graph_node_target = batch_data.y[current_node_idx : current_node_idx + num_nodes_in_graph]
                 # Get the file_id (assuming graph_id from Data object is the file_id)
                 file_id = graph_ids_in_batch[i] 
                 

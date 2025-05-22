@@ -235,7 +235,7 @@ def segmentation_canny_ws(image_preds):
     ws_alpha = fill_small_segments(ws_alpha)
     return ws_alpha
 
-def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, feature_map_x7, feature_map_u7, slope_image):
+def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, feature_map_x7, feature_map_u7, slope_image, flow_acc, twi):
     ws_alpha = segmentation_slic(image_probs)
 
     labels = np.unique(ws_alpha)
@@ -255,12 +255,14 @@ def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, featur
     predicted_label = extract_mean_probabilities(ws_alpha_reindex, image_probs)
     target_label = extract_majority_labels(ws_alpha_reindex, label_image)
     slope_stats = extract_slope_statistics(ws_alpha_reindex, slope_image)
+    flow_twi_stats = extract_twi_flowacc_statistics(ws_alpha_reindex, twi, flow_acc)
 
     deep_features_x9 = extract_deep_features(centers_int, feature_map_x9)
     deep_features_x7 = extract_deep_features(centers_int, feature_map_x7)
     deep_features_u7 = extract_deep_features(centers_int, feature_map_u7)
 
-    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, slope_stats, deep_features_x9, deep_features_x7, deep_features_u7, target_label))
+    labeled_centers = np.column_stack((np.array(labels_reindex)-1, centers_int, predicted_label, slope_stats,
+                                       flow_twi_stats, deep_features_x9, deep_features_x7, deep_features_u7, target_label))
     # dilated_ws = grey_dilation(ws_alpha, size=(3, 3))
 
     H, W = ws_alpha_reindex.shape
@@ -325,6 +327,32 @@ def extract_slope_statistics(multi_seg_mask, slope_image):
             np.max(slope_values_in_segment),
             np.std(slope_values_in_segment),
             np.sum(seg_mask)
+        ])
+
+    return np.array(stats, dtype=np.float32)
+
+def extract_twi_flowacc_statistics(multi_seg_mask, twi, flowacc):
+    """Calculates min, mean, max slope for each segment."""
+    stats = []
+    unique_segment_ids = np.unique(multi_seg_mask)
+    unique_segment_ids = unique_segment_ids[unique_segment_ids != 0] 
+
+    for segment_id in unique_segment_ids:
+
+        seg_mask = (multi_seg_mask == segment_id)
+        twi_values_in_segment = twi[seg_mask]
+        flowacc_values_in_segment = flowacc[seg_mask]
+
+        stats.append([
+            np.min(twi_values_in_segment),
+            np.mean(twi_values_in_segment),
+            np.max(twi_values_in_segment),
+            np.std(twi_values_in_segment),
+
+            np.min(flowacc_values_in_segment),
+            np.sum(flowacc_values_in_segment),
+            np.max(flowacc_values_in_segment),
+            np.std(flowacc_values_in_segment),
         ])
 
     return np.array(stats, dtype=np.float32)
