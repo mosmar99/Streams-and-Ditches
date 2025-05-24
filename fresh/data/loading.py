@@ -3,6 +3,7 @@ from PIL import Image
 from .augmentations import ImageAugmentation
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
+from .fragmentize import FragmentedUNetDataset
 
 class UNetDataset(Dataset):
     def __init__(self, file_list, image_folder, label_folder, augmentations=None):
@@ -48,10 +49,13 @@ def load_data(batch_size,
               test_fnames_path='./data/cv/r1_k10/r1/k1/test.dat',
               image_folder='./data/raw/05m_chips/slope',
               label_folder='./data/raw/05m_chips/labels/',
-              augmentations=None):
+              augmentations=None,
+              use_patching=True,
+              patch_size_factor=0.25,
+              image_size=512):
 
     if num_workers is None:
-        num_workers = max(0, os.cpu_count() - 1)
+        num_workers = os.cpu_count() - 1
 
     def read_file_list(file_path):
         with open(file_path, 'r') as f:
@@ -73,6 +77,12 @@ def load_data(batch_size,
         val_dataset = UNetDataset(val_files, image_folder, label_folder, augmentations=augmentations)
     else:
         val_dataset = None
+
+    if use_patching:
+        train_dataset = FragmentedUNetDataset(train_dataset, patch_size_factor=patch_size_factor, image_size=image_size)
+        test_dataset = FragmentedUNetDataset(test_dataset, patch_size_factor=patch_size_factor, image_size=image_size)
+        if val_dataset is not None:
+            val_dataset = FragmentedUNetDataset(val_dataset, patch_size_factor=patch_size_factor, image_size=image_size)
     
     print(f" -- Train dataset size: {len(train_dataset)} / {len(train_dataset) + len(test_dataset)} ~ {round(len(train_dataset) / (len(train_dataset) + len(test_dataset)), 2)}")
     print(f" -- Test dataset size: {len(test_dataset)} / {len(train_dataset) + len(test_dataset)} ~ {round(len(test_dataset) / (len(train_dataset) + len(test_dataset)), 2)}")

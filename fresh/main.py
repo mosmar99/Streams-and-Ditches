@@ -20,17 +20,19 @@ def main():
     k = 10
     IMG_CHANNELS = 1
     NUM_CLASSES = 3
-    batch_size_unet = 8
-    num_epochs_unet = 1
-    learning_rate_unet = 0.0008
-    unet_model_filename = 'best_unet.pth'
+    weight_decay = None
+    dropout = 0.05
+    batch_size_unet = 128
+    num_epochs_unet = 200
+    learning_rate_unet = 0.0006
+    unet_model_filename = 'unet_model'
 
     # # get data
     # augmentations = ImageAugmentation()  
     train_loader_unet, test_loader_unet, train_dataset_unet, test_dataset_unet = get_raw_data.load_data(batch_size_unet, augmentations=None)
 
     # # instantiate the UNet model
-    unet_model = UNet(in_channels=IMG_CHANNELS, num_classes=NUM_CLASSES).to(model_device)
+    unet_model = UNet(in_channels=IMG_CHANNELS, num_classes=NUM_CLASSES, dropout=dropout).to(model_device)
 
     # # define the loss function and optimizer
     tversky_alpha = 0.3 
@@ -38,7 +40,7 @@ def main():
     criterion_unet = TverskyLoss(alpha=tversky_alpha, beta=tversky_beta, num_classes=NUM_CLASSES).to(model_device)
     optimizer_unet = optim.Adam(unet_model.parameters(), lr=learning_rate_unet)
 
-    # # train the UNet model
+    # train the UNet model
     base_logdir = read_logdir()
     print("\nStarting UNet Training...", flush=True)
     trained_unet_model = train_unet(
@@ -50,10 +52,13 @@ def main():
         device=model_device,
         logdir=base_logdir,
         model_name=unet_model_filename,
+        weight_decay=weight_decay,
+        dropout=dropout,
     )
     print("UNet training process completed.", flush=True)
 
-    # print("\nStarting UNet Testing...", flush=True)
+    print("\nStarting UNet Testing...", flush=True)
+    # base_logdir = 'logs/unet/ID_5633'
     unet_checkpoints_logdir = os.path.join(base_logdir, 'checkpoints')
     best_model_path = unet_checkpoints_logdir
 

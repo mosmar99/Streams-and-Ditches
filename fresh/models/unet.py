@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def double_conv(in_c, out_c, dropout_prob=0.2):
+def double_conv(in_c, out_c, dropout_prob=0.05):
     conv = nn.Sequential(
         nn.Conv2d(in_c, out_c, kernel_size=3, padding='same', bias=False),
         nn.BatchNorm2d(out_c),
@@ -93,15 +93,15 @@ class TverskyLoss(nn.Module):
         return loss / self.num_classes
 
 class UNet(nn.Module):
-    def __init__(self, in_channels=1, num_classes=3):
+    def __init__(self, in_channels=1, num_classes=3, dropout=0.05):
         super(UNet, self).__init__()
         self.num_classes = num_classes
         self.max_pool_2x2 = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.down_conv1 = double_conv(in_channels, 32)
-        self.down_conv2 = double_conv(32, 64)
-        self.down_conv3 = double_conv(64, 128)
-        self.down_conv4 = double_conv(128, 256)
-        self.down_conv5 = double_conv(256, 512)
+        self.down_conv1 = double_conv(in_channels, 32, dropout_prob=dropout)
+        self.down_conv2 = double_conv(32, 64, dropout_prob=dropout)
+        self.down_conv3 = double_conv(64, 128, dropout_prob=dropout)
+        self.down_conv4 = double_conv(128, 256, dropout_prob=dropout)
+        self.down_conv5 = double_conv(256, 512, dropout_prob=dropout)
         self.up_trans_1 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
         self.up_conv_1 = double_conv(512, 256)
         self.up_trans_2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
