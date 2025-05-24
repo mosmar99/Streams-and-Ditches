@@ -173,7 +173,7 @@ def extract_majority_labels(multi_seg_mask, target):
         target_masked = target[seg_mask]
         unique, counts = np.unique(target_masked, return_counts=True)
 
-        counts[unique == 0] = counts[unique == 0]//6
+        # counts[unique == 0] = counts[unique == 0]//6
 
         majority_index = np.argmax(counts)
         labels.append(unique[majority_index])
@@ -208,6 +208,15 @@ def segmentation_slic(image_probs):
     shedsl = slic(image_probs, n_segments=4800, channel_axis=0)
     shed_alpha = remove_square_segments_optimized(shedsl, min_in_seg=0.97)
 
+    # vmin = 0
+    # vmax = 2
+    # fig, ax = plt.subplots(1,2)
+    # ax[0].imshow(color_segments_rand(shed_alpha))
+    # ax[0].set_title("shed_alpha")
+    # ax[1].imshow(color_segments_rand(shedsl))
+    # ax[1].set_title("shedsl")
+    # plt.show()
+
     return shed_alpha
 
 def segmentation_canny_ws(image_preds):
@@ -235,7 +244,7 @@ def segmentation_canny_ws(image_preds):
     ws_alpha = fill_small_segments(ws_alpha)
     return ws_alpha
 
-def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, feature_map_x7, feature_map_u7, slope_image, flow_acc, twi):
+def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, feature_map_x7, feature_map_u7, slope_image, flow_acc, twi, alt_label):
     ws_alpha = segmentation_slic(image_probs)
 
     labels = np.unique(ws_alpha)
@@ -253,7 +262,7 @@ def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, featur
     centers_int = np.round(centers).astype(int)
 
     predicted_label = extract_mean_probabilities(ws_alpha_reindex, image_probs)
-    target_label = extract_majority_labels(ws_alpha_reindex, label_image)
+    target_label = extract_majority_labels(ws_alpha_reindex, alt_label)
     slope_stats = extract_slope_statistics(ws_alpha_reindex, slope_image)
     flow_twi_stats = extract_twi_flowacc_statistics(ws_alpha_reindex, twi, flow_acc)
 

@@ -4,9 +4,10 @@ import torch
 import numpy as np
 import torch.nn as nn
 from PIL import Image
-from unet import UNet, UNetDataset
+from fresh.models.unet import UNet
+from mapio.unet import UNetDataset
 from torch.utils.data import DataLoader
-import graph_processing
+import mapio.graph_processing as graph_processing
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA, IncrementalPCA
 import umap
@@ -23,108 +24,6 @@ from skimage.filters import sobel, meijering, sato, frangi, hessian, gaussian, t
 def read_file_list(file_path):
     with open(file_path, 'r') as f:
         return [line.strip() for line in f.readlines()]
-
-def fit_umap(train_loader, best_model_path, logdir, device=None, n_components=4, umap_params=None):
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    model_instance = UNet().to(device)
-    model_instance.load_state_dict(torch.load(best_model_path, map_location=device))
-    model_instance.eval()
-
-    intermediate_features_capture = {}
-    def get_features_hook(name):
-        def hook(module, input_val, output_val):
-            intermediate_features_capture[name] = output_val.detach().cpu().numpy()
-        return hook
-    
-    # Define layer paths based on your model structure. These are examples.
-    # Ensure these paths correctly point to the layers you want to hook.
-    # E.g., model_instance.encoder.layer_x or model_instance.decoder.layer_y
-    # The original example used:
-    # model_instance.down_conv5[-1]
-    # model_instance.down_conv4[-1]
-    # model_instance.up_conv_1[-1]
-    # Adjust these paths as per your UNet_class definition.
-    
-    # Placeholder for actual layer access, adjust these:
-    # hook_layer_x9 = model_instance.down_conv5[-1] 
-    # hook_layer_x7 = model_instance.down_conv4[-1]
-    # hook_layer_u7 = model_instance.up_conv_1[-1]
-    
-    # You need to replace these with actual layer references from your UNet_class
-    # For demonstration, let's assume these attributes exist and are nn.Module
-    # If your model structure is different, you MUST update these lines.
-    layer_paths_to_hook = {
-        "x9": model_instance.down_conv5[-1] if hasattr(model_instance, 'down_conv5') else None,
-        "x7": model_instance.down_conv4[-1] if hasattr(model_instance, 'down_conv4') else None,
-        "u7": model_instance.up_conv_1[-1] if hasattr(model_instance, 'up_conv_1') else None,
-    }
-    
-    # Filter out None layers if some paths don't exist
-    active_hooks = {name: layer for name, layer in layer_paths_to_hook.items() if layer is not None}
-    if not active_hooks:
-        raise ValueError("No valid layers found for hooking. Please check layer paths in fit_umap.")
-        
-    handles = []
-    for name, layer_module in active_hooks.items():
-        handles.append(layer_module.register_forward_hook(get_features_hook(name)))
-
-    all_feature_lists = {name: [] for name in active_hooks}
-
-    try:
-        for i, (batch_images, * _) in enumerate(tqdm.tqdm(train_loader, desc="Extracting features for UMAP")):
-            batch_images = batch_images.to(device)
-            with torch.no_grad():
-                _ = model_instance(batch_images) 
-            
-            for name in active_hooks:
-                features = intermediate_features_capture[name] # [B, C, H, W]
-                _, C, _, _ = features.shape
-                # Reshape to [B*H*W, C]
-                reshaped_features = np.transpose(features, (0, 2, 3, 1)).reshape(-1, C)
-                all_feature_lists[name].append(reshaped_features)
-    finally:
-        for handle in handles:
-            handle.remove() # Important to remove hooks
-
-    concatenated_features = {}
-    for name in active_hooks:
-        concatenated_features[name] = np.concatenate(all_feature_lists[name], axis=0)
-
-    if umap_params is None:
-        umap_params = {} 
-
-    fitted_reducers = {}
-    for name in active_hooks:
-        data_to_fit = concatenated_features[name]
-        print(f"Fitting UMAP for {name} on data of shape: {data_to_fit.shape}")
-        reducer = umap.UMAP(n_components=n_components, **umap_params)
-        reducer.fit(data_to_fit)
-        fitted_reducers[name] = reducer
-    
-    os.makedirs(logdir, exist_ok=True)
-    for name, reducer in fitted_reducers.items():
-        pk.dump(reducer, open(os.path.join(logdir, f"umap_{name}.pkl"), "wb"))
-
-    # Return in a specific order if needed, or as a dict
-    # For compatibility with the original return (pca_x9, pca_x7, pca_u7):
-    return fitted_reducers.get("x9"), fitted_reducers.get("x7"), fitted_reducers.get("u7")
-
-
-def apply_umap_transform(umap_model, features_to_transform):
-    B, C, H, W = features_to_transform.shape
-    # Reshape from [B, C, H, W] to [B*H*W, C]
-    reshaped_feats = np.transpose(features_to_transform, (0, 2, 3, 1)).reshape(-1, C) 
-
-    transformed = umap_model.transform(reshaped_feats) # [B*H*W, n_components]
-    
-    # Reshape back to [B, H, W, n_components] and then [B, n_components, H, W]
-    # transformed.shape[1] is n_components
-    image_space_transformed = transformed.reshape(B, H, W, -1) 
-    final_output = np.transpose(image_space_transformed, (0, 3, 1, 2))
-
-    return final_output
 
 def fit_pca(train_loader, best_model_path, logdir, n_components=4):
     test_model = UNet().to(device)
@@ -198,8 +97,8 @@ def save_graph_data(j, img_file_name, nodes, connections, node_mask,
         np.savez_compressed(os.path.join(node_mask_dir, f"{img_file_name[j]}.npz"), image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
 
 def main(logdir, epochs=42, batch_size=42):
-    train_fnames_path = './data/05m_folds_mapio/r1/f1/train.dat'
-    test_fnames_path = './data/05m_folds_mapio/r1/f1/test.dat'
+    train_fnames_path = './data/05m_folds_mapio/r1/k1/train.dat'
+    test_fnames_path = './data/05m_folds_mapio/r1/k1/test.dat'
 
     train_files = read_file_list(train_fnames_path)
     test_files = read_file_list(test_fnames_path)
@@ -215,7 +114,7 @@ def main(logdir, epochs=42, batch_size=42):
     # 20250513_161035
     # instantiate the model
     test_model = UNet().to(device)
-    best_model_path = 'logs/unet_model_ckpt1.pth'
+    best_model_path = 'logs/best_unet.pth'
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
 
@@ -239,15 +138,9 @@ def main(logdir, epochs=42, batch_size=42):
 
     # pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, logdir, n_components=4)
 
-    # pca_x9 = pk.load(open(os.path.join(logdir,"pca_x9.pkl"),'rb'))
-    # pca_x7 = pk.load(open(os.path.join(logdir,"pca_x7.pkl"),'rb'))
-    # pca_u7 = pk.load(open(os.path.join(logdir,"pca.pkl"),'rb'))
-
-    umap_x9, umap_x7, umap_u7 = fit_umap(train_loader, best_model_path, logdir, n_components=4)
-    exit()
-    umap_x9 = pk.load(open(os.path.join(logdir,"umap_x9.pkl"),'rb'))
-    umap_x7 = pk.load(open(os.path.join(logdir,"umap_x7.pkl"),'rb'))
-    umap_u7 = pk.load(open(os.path.join(logdir,"umap_u7.pkl"),'rb'))
+    pca_x9 = pk.load(open(os.path.join(logdir,"pca_x9.pkl"),'rb'))
+    pca_x7 = pk.load(open(os.path.join(logdir,"pca_x7.pkl"),'rb'))
+    pca_u7 = pk.load(open(os.path.join(logdir,"pca.pkl"),'rb'))
 
     scaler = MinMaxScaler()
 
@@ -269,16 +162,17 @@ def main(logdir, epochs=42, batch_size=42):
             labes_cpu = labels.cpu().numpy()
             batch_images_cpu = batch_images.cpu().numpy()
 
-            # deep_x9 = apply_pca_transform(pca_x9, intermediate["x9"])
-            # deep_x7 = apply_pca_transform(pca_x7, intermediate["x7"])
-            # deep_u7 = apply_pca_transform(pca_u7, intermediate["u7"])
+            deep_x9 = apply_pca_transform(pca_x9, intermediate["x9"])
+            deep_x7 = apply_pca_transform(pca_x7, intermediate["x7"])
+            deep_u7 = apply_pca_transform(pca_u7, intermediate["u7"])
 
-            deep_x9 = apply_pca_transform(umap_x9, intermediate["x9"])
-            deep_x7 = apply_pca_transform(umap_x7, intermediate["x7"])
-            deep_u7 = apply_pca_transform(umap_u7, intermediate["u7"])
+            # deep_x9 = apply_pca_transform(umap_x9, intermediate["x9"])
+            # deep_x7 = apply_pca_transform(umap_x7, intermediate["x7"])
+            # deep_u7 = apply_pca_transform(umap_u7, intermediate["u7"])
 
-            flow_acc = np.array([tifffile.imread(os.path.join("./data/05m_chips/flow_acc/", f"{image}.tif")) for image in img_file_name])
-            twi = np.array([tifffile.imread(os.path.join("./data/05m_chips/twi/", f"{image}.tif")) for image in img_file_name])
+            flow_acc = np.array([tifffile.imread(os.path.join("./data/05m_chips/flow_acc", f"{image}.tif")) for image in img_file_name])
+            twi = np.array([tifffile.imread(os.path.join("./data/05m_chips/twi", f"{image}.tif")) for image in img_file_name])
+            alt_label = np.array([tifffile.imread(os.path.join("./data/05m_chips/new_labels", f"{image}.tif")) for image in img_file_name])
 
             graphs = pool.starmap(graph_processing.image_to_graph, [
                 (argmax_pred_cpu[i],
@@ -289,11 +183,12 @@ def main(logdir, epochs=42, batch_size=42):
                 deep_u7[i],
                 batch_images_cpu[i],
                 flow_acc[i],
-                twi[i])
+                twi[i],
+                alt_label[i])
                 for i in range(pred_cpu.shape[0])
             ])
 
-            _ = [scaler.partial_fit(nodes) for nodes, _, _ in graphs]
+            _ = [scaler.partial_fit(nodes) for nodes, _, _ in graphs if nodes.shape[0] > 0]
 
             for j, (nodes, connections, node_mask) in enumerate(graphs):
                 executor.submit(save_graph_data, j, img_file_name, nodes, connections,

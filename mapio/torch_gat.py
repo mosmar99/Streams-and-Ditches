@@ -28,8 +28,8 @@ def read_graphs(data_path, num_deep_feats):
 
     data_dir = os.path.join(data_path, "graphs")
 
-    train_fnames_path = './data/05m_folds_mapio/r1/f1/train.dat'
-    test_fnames_path = './data/05m_folds_mapio/r1/f1/test.dat'
+    train_fnames_path = './data/05m_folds_mapio/r1/k1/train.dat'
+    test_fnames_path = './data/05m_folds_mapio/r1/k1/test.dat'
 
     train_files = read_file_list(train_fnames_path)
     test_files = read_file_list(test_fnames_path)
@@ -51,6 +51,9 @@ def read_graphs(data_path, num_deep_feats):
     edge_names = ["target", "source"]
 
     scaler = pk.load(open(os.path.join(data_path,"nodes_scaler.pkl"),'rb'))
+    scaler.feature_names_in_ = node_names
+    features_to_scale = [*slope_feature_names, *twi_flowacc_feature_names, *deep_feats] # , *deep_feats
+    unscaled_features = [feature for feature in node_names if feature not in features_to_scale]
 
     # --- Load TRAIN/TEST Data ---
     all_node_data = []
@@ -60,9 +63,8 @@ def read_graphs(data_path, num_deep_feats):
         edge_path = os.path.join(data_dir, f'{graph_name[1]}')
         node_df = pd.read_csv(node_path, header=None, sep=',', names=node_names, na_values='_', dtype=np.float32)
 
-        scaler.feature_names_in_ = node_names
-        features_to_scale = [*slope_feature_names, *twi_flowacc_feature_names, *deep_feats] # , *deep_feats
-        node_df[features_to_scale]= pd.DataFrame(scaler.transform(node_df), columns=node_names)[features_to_scale]
+        scaled_features = pd.DataFrame(scaler.transform(node_df), columns=node_names)[features_to_scale]
+        node_df = pd.concat([node_df[unscaled_features], scaled_features], axis=1)
 
         edge_df = pd.read_csv(edge_path, header=None, sep=',', names=edge_names, dtype=np.int32)
         node_df["file_name"] = graph_name[2]
@@ -139,7 +141,7 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         self.dropout_rate = dropout_rate
         self.num_classes = num_classes
 
-        self.preprocess = Linear(in_channels, hidden_channels_gnn*heads)
+        self.preprocess = Linear(in_channels, hidden_channels_gnn * heads)
         self.gn_pre = GraphNorm(hidden_channels_gnn * heads)
 
         self.conv1 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
@@ -148,11 +150,14 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         self.conv2 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
         self.gn2 = GraphNorm(hidden_channels_gnn * heads)
 
-        # self.conv3 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
-        # self.gn3 = GraphNorm(hidden_channels_gnn * heads)
+        self.conv3 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
+        self.gn3 = GraphNorm(hidden_channels_gnn * heads)
 
-        self.conv4 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=False, dropout=dropout_rate, residual=True)
-        self.gn_4 = GraphNorm(out_channels_gnn)
+        self.conv4 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=True, dropout=dropout_rate, residual=True)
+        self.gn4 = GraphNorm(hidden_channels_gnn * heads)
+
+        self.conv5 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=False, dropout=dropout_rate, residual=True)
+        self.gn_5 = GraphNorm(out_channels_gnn)
 
         self.olin1 = torch.nn.Linear(hidden_channels_gnn, hidden_channels_gnn)
 
@@ -167,21 +172,26 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
 
         x = self.conv1(x, edge_index)
         x = self.gn1(x, batch)
-        x = F.elu(x)
+        x = F.relu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
         x = self.conv2(x, edge_index)
         x = self.gn2(x, batch)
-        x = F.elu(x)
+        x = F.relu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
-        # x = self.conv3(x, edge_index)
-        # x = self.gn3(x, batch)
-        # x = F.elu(x)
-        # x = F.dropout(x, p=self.dropout_rate, training=self.training)
+        x = self.conv3(x, edge_index)
+        x = self.gn3(x, batch)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
         x = self.conv4(x, edge_index)
-        x = F.elu(x)
+        x = self.gn4(x, batch)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.dropout_rate, training=self.training)
+
+        x = self.conv5(x, edge_index)
+        x = F.relu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
         x = self.olin1(x)
@@ -338,8 +348,8 @@ def main():
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    data_path = './logs/testing_twi'
-    num_deep_feats = 3*4
+    data_path = './logs/new2'
+    num_deep_feats = 4*3
     log_dir = os.path.join('./logs/torch_gat/', timestamp)
     os.makedirs(log_dir, exist_ok=True)
 
@@ -363,9 +373,9 @@ def main():
     gnn_hidden_dim = 128
     gnn_output_dim = 64
     num_graph_classes = 3
-    heads=4
-    learning_rate = 1e-3
-    weight_decay = 5e-6
+    heads=6
+    learning_rate = 1e-4
+    weight_decay = 0
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
@@ -384,16 +394,14 @@ def main():
 
     sceduler = lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=8)
 
-    criterion = TverskyLoss()
-    # class_weights = torch.tensor([1.0,1.2,1.6], device=device)
-    # criterion = CrossEntropyLoss(weight=class_weights)
-
+    class_weights = torch.tensor([1.0,1.2,1.6], device=device)
+    criterion = CrossEntropyLoss(weight=class_weights)
 
     history = model.fit(
         train_loader,
         optimizer,
         criterion,
-        epochs=50,
+        epochs=10,
         val_loader=val_loader,
         device=device,
         checkpoint_handlers=checkpoints,
@@ -402,7 +410,7 @@ def main():
         lr_scheduler=sceduler
     )
 
-    # model.load_state_dict(torch.load("./logs/torch_gat/20250521_201526/gat_model_ckpt.pth", map_location=device))
+    # model.load_state_dict(torch.load("./logs/torch_gat/20250522_223936/gat_model_ckpt.pth", map_location=device))
 
     model.eval()
     reconstruction_data_base_dir = os.path.join(data_path, "reconstruction")
