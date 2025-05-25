@@ -1,4 +1,4 @@
-Testing started at: 2025-05-23 20:49:19
+Testing started at: 2025-05-24 17:35:55
 Device: cuda, Model: UNet
 Checkpoint: logs/unet/ID_5614/checkpoints/unet_model_epoch25.pth
 Batch Size: 8
@@ -64,7 +64,7 @@ Batch, BatchLoss
 58, 0.506831
 
 --- Overall Metrics ---
-Testing finished at: 2025-05-23 20:49:42
+Testing finished at: 2025-05-24 17:36:17
 Average Test Loss: 0.325962
 Overall Pixel Accuracy: 0.993173
 Mean IoU: 0.606776
