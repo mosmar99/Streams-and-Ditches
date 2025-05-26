@@ -12,8 +12,9 @@ from models.unet import UNet, WeightedMSE, TverskyLoss, device as model_device
 def read_logdir():
     parser = argparse.ArgumentParser(description='UNet Training')
     parser.add_argument('--logdir', type=str, default='checkpoints/my_unet_run', help='Directory to save checkpoints')
+    parser.add_argument('--fold', type=str, default='tf1', help='What fold to run')
     args = parser.parse_args()
-    return args.logdir
+    return args.logdir, args.fold
 
 def main():
     # parameters
@@ -27,9 +28,16 @@ def main():
     learning_rate_unet = 0.0008
     unet_model_filename = 'unet_model'
 
+    base_logdir, fold = read_logdir()
+    train_fnames_path=f'./data/cv/05m_folds/{fold}/train.dat'
+    test_fnames_path=f'./data/cv/05m_folds/{fold}/test.dat'
     # # get data
     # augmentations = ImageAugmentation()  
-    train_loader_unet, test_loader_unet, train_dataset_unet, test_dataset_unet = get_raw_data.load_data(batch_size_unet, augmentations=None, use_patching=False)
+    train_loader_unet, test_loader_unet, train_dataset_unet, test_dataset_unet = get_raw_data.load_data(batch_size_unet,
+                                                                                                        augmentations=None,
+                                                                                                        use_patching=False,
+                                                                                                        train_fnames_path=train_fnames_path,
+                                                                                                        test_fnames_path=test_fnames_path)
 
     # # instantiate the UNet model
     unet_model = UNet(in_channels=IMG_CHANNELS, num_classes=NUM_CLASSES, dropout=dropout).to(model_device)
@@ -42,7 +50,6 @@ def main():
     optimizer_unet = optim.Adam(unet_model.parameters(), lr=learning_rate_unet)
 
     # train the UNet model
-    base_logdir = read_logdir()
     print("\nStarting UNet Training...", flush=True)
     trained_unet_model = train_unet(
         model=unet_model,
