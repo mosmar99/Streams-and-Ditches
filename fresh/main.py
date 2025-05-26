@@ -7,7 +7,7 @@ from scripts.train import train_unet
 from scripts.test import test_unet
 # from utils.visualization import Visualize
 from data.augmentations import ImageAugmentation
-from models.unet import UNet, TverskyLoss, device as model_device
+from models.unet import UNet, WeightedMSE, TverskyLoss, device as model_device
 
 def read_logdir():
     parser = argparse.ArgumentParser(description='UNet Training')
@@ -22,14 +22,14 @@ def main():
     NUM_CLASSES = 3
     weight_decay = None
     dropout = 0.05
-    batch_size_unet = 128
-    num_epochs_unet = 200
-    learning_rate_unet = 0.0006
+    batch_size_unet = 8
+    num_epochs_unet = 100
+    learning_rate_unet = 0.0008
     unet_model_filename = 'unet_model'
 
     # # get data
     # augmentations = ImageAugmentation()  
-    train_loader_unet, test_loader_unet, train_dataset_unet, test_dataset_unet = get_raw_data.load_data(batch_size_unet, augmentations=None)
+    train_loader_unet, test_loader_unet, train_dataset_unet, test_dataset_unet = get_raw_data.load_data(batch_size_unet, augmentations=None, use_patching=False)
 
     # # instantiate the UNet model
     unet_model = UNet(in_channels=IMG_CHANNELS, num_classes=NUM_CLASSES, dropout=dropout).to(model_device)
@@ -38,6 +38,7 @@ def main():
     tversky_alpha = 0.3 
     tversky_beta = 0.7
     criterion_unet = TverskyLoss(alpha=tversky_alpha, beta=tversky_beta, num_classes=NUM_CLASSES).to(model_device)
+    # criterion_unet = WeightedMSE(weights=[]).to(model_device)
     optimizer_unet = optim.Adam(unet_model.parameters(), lr=learning_rate_unet)
 
     # train the UNet model
@@ -66,7 +67,7 @@ def main():
     criterion_unet_test = TverskyLoss(alpha=tversky_alpha, beta=tversky_beta, num_classes=NUM_CLASSES).to(model_device)
 
     unet_test_results_logdir = os.path.join(base_logdir, 'test_results')
-    best_model_path = os.path.join(unet_checkpoints_logdir, unet_model_filename)
+    best_model_path = os.path.join(unet_checkpoints_logdir, f"{unet_model_filename}_epoch100.pth")
     test_metrics = test_unet(
         model=model_for_testing,
         test_loader=test_loader_unet,

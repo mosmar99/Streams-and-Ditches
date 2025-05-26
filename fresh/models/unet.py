@@ -92,6 +92,42 @@ class TverskyLoss(nn.Module):
             loss += class_loss
         return loss / self.num_classes
 
+class WeightedMSE(nn.Module):
+
+    '''Weighted mean square error loss'''
+
+    def __init__(self, weights=None, device='cuda'):
+        '''Setup loss
+
+        Parameters
+        ----------
+        weights : List of class weights, optional
+        device : Select device to run on, optional
+        '''
+        nn.Module.__init__(self)
+        self._weights = torch.from_numpy(weights).to(device)
+
+    def forward(self, inputs, targets):
+        '''Compute loss for given inputs and targets
+
+        Parameters
+        ----------
+        inputs : Predicted output
+        targets : Target output
+
+        Returns
+        -------
+        Weighted MSE
+
+        '''
+        if self._weights is not None:
+            mse = ((inputs - targets) ** 2).mean(dim=(0, 2, 3))
+            mse = (self._weights * mse).sum()
+        else:
+            mse = ((inputs - targets) ** 2).mean()
+
+        return mse
+
 class UNet(nn.Module):
     def __init__(self, in_channels=1, num_classes=3, dropout=0.05):
         super(UNet, self).__init__()
@@ -102,8 +138,6 @@ class UNet(nn.Module):
         self.down_conv3 = double_conv(64, 128, dropout_prob=dropout)
         self.down_conv4 = double_conv(128, 256, dropout_prob=dropout)
         self.down_conv5 = double_conv(256, 512, dropout_prob=dropout)
-
-        self.attn = nn.MultiheadAttention(embed_dim=512, num_heads=4)
 
         self.up_trans_1 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
         self.up_conv_1 = double_conv(512, 256)
@@ -125,11 +159,6 @@ class UNet(nn.Module):
         x7 = self.down_conv4(x6)
         x8 = self.max_pool_2x2(x7)
         x9 = self.down_conv5(x8)
-
-        B, C, H, W = x9.shape
-        x9_flat = x9.view(B, C, H*W).permute(2, 0, 1)  # [H*W, B, C]
-        attn_out, _ = self.attn(x9_flat, x9_flat, x9_flat)
-        x9 = attn_out.permute(1, 2, 0).view(B, C, H, W)
 
         x = self.up_trans_1(x9)
         y = crop_img(x7, x)
