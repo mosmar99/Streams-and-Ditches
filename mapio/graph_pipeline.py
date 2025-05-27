@@ -25,7 +25,7 @@ def read_file_list(file_path):
     with open(file_path, 'r') as f:
         return [line.strip() for line in f.readlines()]
 
-def fit_pca(train_loader, best_model_path, logdir, n_components=4):
+def fit_pca(train_loader, best_model_path, save_dir, n_components=4):
     test_model = UNet().to(device)
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
@@ -66,9 +66,9 @@ def fit_pca(train_loader, best_model_path, logdir, n_components=4):
         pca_x7.partial_fit(feats_reshaped_x7)
         pca_u7.partial_fit(feats_reshaped_u7)
     
-    pk.dump(pca_x9, open(os.path.join(logdir, "pca_x9.pkl"), "wb"))
-    pk.dump(pca_x7, open(os.path.join(logdir, "pca_x7.pkl"), "wb"))
-    pk.dump(pca_u7, open(os.path.join(logdir, "pca.pkl"), "wb"))
+    pk.dump(pca_x9, open(os.path.join(save_dir, "pca_x9.pkl"), "wb"))
+    pk.dump(pca_x7, open(os.path.join(save_dir, "pca_x7.pkl"), "wb"))
+    pk.dump(pca_u7, open(os.path.join(save_dir, "pca_u7.pkl"), "wb"))
 
     return pca_x9, pca_x7, pca_u7
 
@@ -84,17 +84,11 @@ def apply_pca_transform(pca, features):
     return transformed
 
 def save_graph_data(j, img_file_name, nodes, connections, node_mask, 
-                    argmax_pred_cpu, graph_dir, node_mask_dir):
+                    argmax_pred_cpu, graph_dir):
     if nodes.shape[0] == 0:
-        return
-    deep_fmt = ('%.7f',)*(4*3)
-    slope_fmt = ('%.7f',)*5
-    twi_flowacc_fmt = ('%.7f',)*8
-    node_fmt = ('%d', '%d', '%d', '%.7f', '%.7f', '%.7f',*slope_fmt, *twi_flowacc_fmt, *deep_fmt, '%d')
-    if nodes.shape[0] != 0:
-        np.savetxt(os.path.join(graph_dir, f"{img_file_name[j]}.nodes"), nodes, delimiter=",", fmt=node_fmt)
-        np.savetxt(os.path.join(graph_dir, f"{img_file_name[j]}.edges"), connections, delimiter=",", fmt='%d')    
-        np.savez_compressed(os.path.join(node_mask_dir, f"{img_file_name[j]}.npz"), image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
+        return  
+    np.savez_compressed(os.path.join(graph_dir, f"{img_file_name[j]}.npz"), 
+                        nodes=nodes, edges=connections, image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
 
 def main(logdir, fold="tf1", batch_size=8):
     train_fnames_path = f'./data/05m_folds/{fold}/train.dat'
@@ -116,7 +110,7 @@ def main(logdir, fold="tf1", batch_size=8):
     # 20250513_161035
     # instantiate the model
     test_model = UNet().to(device)
-    best_model_path = f'logs/UNETCV/{fold}best_unet.pth'
+    best_model_path = os.path.join(logdir, fold, '/unet/checkpoints/unet_model_epoch100.pth')
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
 
@@ -130,19 +124,14 @@ def main(logdir, fold="tf1", batch_size=8):
     test_model.down_conv4[-1].register_forward_hook(get_features("x7"))
     test_model.up_conv_1[-1].register_forward_hook(get_features("u7"))
 
-    # create a directory to save the predictions
-    # pred_dir = os.path.join(logdir, 'predictions')
     graph_dir = os.path.join(logdir, 'graphs')
-    node_mask_dir = os.path.join(logdir, 'reconstruction')
-    # os.makedirs(pred_dir, exist_ok=True)
     os.makedirs(graph_dir, exist_ok=True)
-    os.makedirs(node_mask_dir, exist_ok=True)
 
-    # pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, logdir, n_components=4)
+    pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, graph_dir, n_components=4)
 
-    pca_x9 = pk.load(open(os.path.join(logdir,"pca_x9.pkl"),'rb'))
-    pca_x7 = pk.load(open(os.path.join(logdir,"pca_x7.pkl"),'rb'))
-    pca_u7 = pk.load(open(os.path.join(logdir,"pca.pkl"),'rb'))
+    pca_x9 = pk.load(open(os.path.join(graph_dir,"pca_x9.pkl"),'rb'))
+    pca_x7 = pk.load(open(os.path.join(graph_dir,"pca_x7.pkl"),'rb'))
+    pca_u7 = pk.load(open(os.path.join(graph_dir,"pca_u7.pkl"),'rb'))
 
     scaler = MinMaxScaler()
 
@@ -168,13 +157,8 @@ def main(logdir, fold="tf1", batch_size=8):
             deep_x7 = apply_pca_transform(pca_x7, intermediate["x7"])
             deep_u7 = apply_pca_transform(pca_u7, intermediate["u7"])
 
-            # deep_x9 = apply_pca_transform(umap_x9, intermediate["x9"])
-            # deep_x7 = apply_pca_transform(umap_x7, intermediate["x7"])
-            # deep_u7 = apply_pca_transform(umap_u7, intermediate["u7"])
-
             flow_acc = np.array([tifffile.imread(os.path.join("./data/05m_chips/flow_acc", f"{image}.tif")) for image in img_file_name])
             twi = np.array([tifffile.imread(os.path.join("./data/05m_chips/twi", f"{image}.tif")) for image in img_file_name])
-            alt_label = np.array([tifffile.imread(os.path.join("./data/05m_chips/new_labels", f"{image}.tif")) for image in img_file_name])
 
             graphs = pool.starmap(graph_processing.image_to_graph, [
                 (argmax_pred_cpu[i],
@@ -185,8 +169,7 @@ def main(logdir, fold="tf1", batch_size=8):
                 deep_u7[i],
                 batch_images_cpu[i],
                 flow_acc[i],
-                twi[i],
-                alt_label[i])
+                twi[i])
                 for i in range(pred_cpu.shape[0])
             ])
 
@@ -194,9 +177,9 @@ def main(logdir, fold="tf1", batch_size=8):
 
             for j, (nodes, connections, node_mask) in enumerate(graphs):
                 executor.submit(save_graph_data, j, img_file_name, nodes, connections,
-                                node_mask, argmax_pred_cpu, graph_dir, node_mask_dir)
+                                node_mask, argmax_pred_cpu, graph_dir)
 
-    pk.dump(scaler, open(os.path.join(logdir, "nodes_scaler.pkl"), "wb"))
+    pk.dump(scaler, open(os.path.join(graph_dir, "nodes_scaler.pkl"), "wb"))
 
 if __name__ == '__main__':
     import time
@@ -207,13 +190,13 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # get the arguments
-    parser = argparse.ArgumentParser(description='UNet Training')
-    parser.add_argument('--logdir', type=str, default='logs', help='Directory to save logs')
+    parser = argparse.ArgumentParser(description='Create graphs')
     parser.add_argument('--fold', type=str, default='tf1', help='What fold to use')
     args = parser.parse_args()
-    logdir = args.logdir
+    fold = args.fold
+    logdir = './logs/UNETCV'
 
-    main(logdir, batch_size=8)
+    main(logdir, fold, batch_size=8)
     
     end_time = time.time()
     print('Total time taken: {:.2f} min'.format((end_time - begin_time) / 60))

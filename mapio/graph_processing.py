@@ -244,7 +244,7 @@ def segmentation_canny_ws(image_preds):
     ws_alpha = fill_small_segments(ws_alpha)
     return ws_alpha
 
-def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, feature_map_x7, feature_map_u7, slope_image, flow_acc, twi, alt_label):
+def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, feature_map_x7, feature_map_u7, slope_image, flow_acc, twi):
     ws_alpha = segmentation_slic(image_probs)
 
     labels = np.unique(ws_alpha)
@@ -262,7 +262,7 @@ def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, featur
     centers_int = np.round(centers).astype(int)
 
     predicted_label = extract_mean_probabilities(ws_alpha_reindex, image_probs)
-    target_label = extract_majority_labels(ws_alpha_reindex, alt_label)
+    target_label = extract_majority_labels(ws_alpha_reindex, label_image)
     slope_stats = extract_slope_statistics(ws_alpha_reindex, slope_image)
     flow_twi_stats = extract_twi_flowacc_statistics(ws_alpha_reindex, twi, flow_acc)
 

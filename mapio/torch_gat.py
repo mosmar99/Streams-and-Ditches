@@ -18,7 +18,7 @@ from torch_geometric.utils import to_scipy_sparse_matrix, get_laplacian
 from scipy.sparse.linalg import eigsh
 import torch_geometric.transforms as T
 
-def read_graphs(data_path, num_deep_feats):
+def read_graphs(data_path, num_deep_feats, fold):
     def read_file_list(file_path):
         with open(file_path, 'r') as f:
             return [line.strip() for line in f.readlines()]
@@ -28,21 +28,15 @@ def read_graphs(data_path, num_deep_feats):
 
     data_dir = os.path.join(data_path, "graphs")
 
-    train_fnames_path = './data/05m_folds_mapio/r1/k1/train.dat'
-    test_fnames_path = './data/05m_folds_mapio/r1/k1/test.dat'
+    train_fnames_path = f'./data/05m_folds/{fold}/train.dat'
+    test_fnames_path = f'./data/05m_folds/{fold}/test.dat'
+    valid_fnames_path = f'./data/05m_folds/{fold}/valid.dat'
 
     train_files = read_file_list(train_fnames_path)
     test_files = read_file_list(test_fnames_path)
-
-    print([f for f in train_files if f in test_files])
+    valid_files = read_file_list(valid_fnames_path)
 
     all_files = set([f.split('.')[0] for f in os.listdir(data_dir)])
-    print(len(all_files))
-    # all_files = test_files + train_files
-    node_files = [f + ".nodes" for f in all_files]
-    edge_files = [f + ".edges" for f in all_files]
-
-    combined_filenames = zip(node_files, edge_files, all_files)
 
     deep_feats = [f"deep_{i}" for i in range(num_deep_feats)]
     slope_feature_names = ["slope_min", "slope_mean", "slope_max", "slope_std", "area"]
@@ -58,28 +52,21 @@ def read_graphs(data_path, num_deep_feats):
     # --- Load TRAIN/TEST Data ---
     all_node_data = []
     all_edge_data = []
-    for graph_name in combined_filenames:
+    for graph_name in all_files:
         node_path = os.path.join(data_dir, f'{graph_name[0]}')
         edge_path = os.path.join(data_dir, f'{graph_name[1]}')
-        node_df = pd.read_csv(node_path, header=None, sep=',', names=node_names, na_values='_', dtype=np.float32)
+
+        np_data = np.load(data_dir)
+
+        node_df = pd.DataFrame(np_data["nodes"], columns=node_names, dtype=np.float32)
 
         scaled_features = pd.DataFrame(scaler.transform(node_df), columns=node_names)[features_to_scale]
         node_df = pd.concat([node_df[unscaled_features], scaled_features], axis=1)
 
-        edge_df = pd.read_csv(edge_path, header=None, sep=',', names=edge_names, dtype=np.int32)
+        edge_df = pd.DataFrame(np_data["edges"], columns=edge_names, dtype=np.int32)
         node_df["file_name"] = graph_name[2]
         # Make graph undirected
         edge_df = pd.concat([edge_df, edge_df.rename(columns={"source": "target", "target": "source"})])
-
-
-        # # Add self-loops to the edge DataFrame
-        # node_ids = node_df['node_id'].unique()
-        # self_loops = pd.DataFrame({
-        #     'source': node_ids,
-        #     'target': node_ids
-        # })
-        # edge_df = pd.concat([edge_df, self_loops], ignore_index=True)
-
 
         if node_df.empty: # dont append edges to node list that contain no edges
             print("THERE IS AN EMPTY GRAPH, GTFO")
@@ -112,8 +99,9 @@ def read_graphs(data_path, num_deep_feats):
     # Split the data into training, validation, and test sets
     train_datas = [datas[i] for i, graph in enumerate(all_files) if graph in train_files]
     test_datas = [datas[i] for i, graph in enumerate(all_files) if graph in test_files]
+    valid_datas = [datas[i] for i, graph in enumerate(all_files) if graph in valid_files]
     
-    return train_datas, test_datas
+    return train_datas, test_datas, valid_datas
 
 class MinCheckpoint():
     def __init__(self, logdir):
@@ -157,7 +145,7 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         self.gn4 = GraphNorm(hidden_channels_gnn * heads)
 
         self.conv5 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=False, dropout=dropout_rate, residual=True)
-        self.gn_5 = GraphNorm(out_channels_gnn)
+        self.gn_5 = GraphNorm(hidden_channels_gnn)
 
         self.olin1 = torch.nn.Linear(hidden_channels_gnn, hidden_channels_gnn)
 
@@ -336,7 +324,7 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
             return torch.empty(0, self.num_classes) # Handle empty dataloader
         return torch.cat(all_probs)
     
-def main():
+def main(logdir, fold):
     from datetime import datetime
     import graph_processing
     import tifffile
@@ -346,16 +334,12 @@ def main():
     BATCH_SIZE = 4
     CLASSES = [0,1,2]
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    data_path = './logs/new2'
+    data_path = os.path.join(logdir, fold)
     num_deep_feats = 4*3
-    log_dir = os.path.join('./logs/torch_gat/', timestamp)
+    log_dir = os.path.join(data_path, "gat_log")
     os.makedirs(log_dir, exist_ok=True)
 
-    temp_datas, test_datas = read_graphs(data_path, num_deep_feats)
-
-    train_datas, val_datas = train_test_split(temp_datas, test_size=0.1, random_state=SEED)
+    train_datas, test_datas, val_datas = read_graphs(data_path, num_deep_feats, fold)
 
     train_loader = DataLoader(train_datas, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_datas, batch_size=BATCH_SIZE)
@@ -503,4 +487,12 @@ def main():
     #     print(f"{key}: {[f'{v:.4f}' for v in values]}")
 
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='UNet Training')
+    parser.add_argument('--fold', type=str, default='tf1', help='What fold to use')
+    args = parser.parse_args()
+    fold = args.fold
+    logdir = './logs/UNETCV'
+
+    main(logdir, fold)
