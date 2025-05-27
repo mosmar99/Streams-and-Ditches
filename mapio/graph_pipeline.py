@@ -96,25 +96,27 @@ def save_graph_data(j, img_file_name, nodes, connections, node_mask,
         np.savetxt(os.path.join(graph_dir, f"{img_file_name[j]}.edges"), connections, delimiter=",", fmt='%d')    
         np.savez_compressed(os.path.join(node_mask_dir, f"{img_file_name[j]}.npz"), image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
 
-def main(logdir, epochs=42, batch_size=42):
-    train_fnames_path = './data/05m_folds_mapio/r1/k1/train.dat'
-    test_fnames_path = './data/05m_folds_mapio/r1/k1/test.dat'
+def main(logdir, fold="tf1", batch_size=8):
+    train_fnames_path = f'./data/05m_folds/{fold}/train.dat'
+    test_fnames_path = f'./data/05m_folds/{fold}/test.dat'
+    valid_fnames_path = f'./data/05m_folds/{fold}/valid.dat'
 
     train_files = read_file_list(train_fnames_path)
     test_files = read_file_list(test_fnames_path)
+    valid_files = read_file_list(valid_fnames_path)
 
-    all_files = train_files + test_files
+    all_files = train_files + test_files + valid_files
 
     image_folder = './data/05m_chips/slope/'
     label_folder = './data/05m_chips/labels/'
 
     train_dataset = UNetDataset(all_files, image_folder, label_folder)
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, num_workers=15, pin_memory=True)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, num_workers=8, pin_memory=True)
 
     # 20250513_161035
     # instantiate the model
     test_model = UNet().to(device)
-    best_model_path = 'logs/best_unet.pth'
+    best_model_path = f'logs/UNETCV/{fold}best_unet.pth'
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
 
@@ -207,10 +209,11 @@ if __name__ == '__main__':
     # get the arguments
     parser = argparse.ArgumentParser(description='UNet Training')
     parser.add_argument('--logdir', type=str, default='logs', help='Directory to save logs')
+    parser.add_argument('--fold', type=str, default='tf1', help='What fold to use')
     args = parser.parse_args()
     logdir = args.logdir
 
-    main(logdir, epochs=100, batch_size=8)
+    main(logdir, batch_size=8)
     
     end_time = time.time()
     print('Total time taken: {:.2f} min'.format((end_time - begin_time) / 60))
