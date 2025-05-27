@@ -130,12 +130,14 @@ def main(logdir, device, fold, batch_size=8):
 
     graph_dir = os.path.join(logdir, fold, 'graphs')
     os.makedirs(graph_dir, exist_ok=True)
+    graph_utils_dir = os.path.join(logdir, fold, 'graph_utils')
+    os.makedirs(graph_utils_dir, exist_ok=True)
 
-    pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, graph_dir, n_components=4)
+    pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, graph_utils_dir, n_components=4)
 
-    pca_x9 = pk.load(open(os.path.join(graph_dir,"pca_x9.pkl"),'rb'))
-    pca_x7 = pk.load(open(os.path.join(graph_dir,"pca_x7.pkl"),'rb'))
-    pca_u7 = pk.load(open(os.path.join(graph_dir,"pca_u7.pkl"),'rb'))
+    pca_x9 = pk.load(open(os.path.join(graph_utils_dir,"pca_x9.pkl"),'rb'))
+    pca_x7 = pk.load(open(os.path.join(graph_utils_dir,"pca_x7.pkl"),'rb'))
+    pca_u7 = pk.load(open(os.path.join(graph_utils_dir,"pca_u7.pkl"),'rb'))
 
     scaler = MinMaxScaler()
 
@@ -183,7 +185,7 @@ def main(logdir, device, fold, batch_size=8):
                 executor.submit(save_graph_data, j, img_file_name, nodes, connections,
                                 node_mask, argmax_pred_cpu, graph_dir)
 
-    pk.dump(scaler, open(os.path.join(graph_dir, "nodes_scaler.pkl"), "wb"))
+    pk.dump(scaler, open(os.path.join(graph_utils_dir, "nodes_scaler.pkl"), "wb"))
 
 if __name__ == '__main__':
     import time

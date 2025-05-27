@@ -27,6 +27,7 @@ def read_graphs(data_path, num_deep_feats, fold):
         return (data - minimum) / coord_range
 
     data_dir = os.path.join(data_path, "graphs")
+    data_utils_dir = os.path.join(data_path, "graph_utils")
 
     train_fnames_path = f'./data/05m_folds/{fold}/train.dat'
     test_fnames_path = f'./data/05m_folds/{fold}/test.dat'
@@ -35,7 +36,7 @@ def read_graphs(data_path, num_deep_feats, fold):
     train_files = read_file_list(train_fnames_path)
     test_files = read_file_list(test_fnames_path)
     valid_files = read_file_list(valid_fnames_path)
-
+    
     all_files = set([f.split('.')[0] for f in os.listdir(data_dir)])
 
     deep_feats = [f"deep_{i}" for i in range(num_deep_feats)]
@@ -44,7 +45,7 @@ def read_graphs(data_path, num_deep_feats, fold):
     node_names = ["node_id", "center_x", "center_y", "prob_0", "prob_1", "prob_2", *slope_feature_names, *twi_flowacc_feature_names, *deep_feats, "target"]
     edge_names = ["target", "source"]
 
-    scaler = pk.load(open(os.path.join(data_path,"nodes_scaler.pkl"),'rb'))
+    scaler = pk.load(open(os.path.join(data_utils_dir,"nodes_scaler.pkl"),'rb'))
     scaler.feature_names_in_ = node_names
     features_to_scale = [*slope_feature_names, *twi_flowacc_feature_names, *deep_feats] # , *deep_feats
     unscaled_features = [feature for feature in node_names if feature not in features_to_scale]
@@ -53,24 +54,27 @@ def read_graphs(data_path, num_deep_feats, fold):
     all_node_data = []
     all_edge_data = []
     for graph_name in all_files:
-        node_path = os.path.join(data_dir, f'{graph_name[0]}')
-        edge_path = os.path.join(data_dir, f'{graph_name[1]}')
+        graph_path = os.path.join(data_dir, f"{graph_name}.npz")
+        np_data = np.load(graph_path)
 
-        np_data = np.load(data_dir)
-
-        node_df = pd.DataFrame(np_data["nodes"], columns=node_names, dtype=np.float32)
-
-        scaled_features = pd.DataFrame(scaler.transform(node_df), columns=node_names)[features_to_scale]
-        node_df = pd.concat([node_df[unscaled_features], scaled_features], axis=1)
-
-        edge_df = pd.DataFrame(np_data["edges"], columns=edge_names, dtype=np.int32)
-        node_df["file_name"] = graph_name[2]
-        # Make graph undirected
-        edge_df = pd.concat([edge_df, edge_df.rename(columns={"source": "target", "target": "source"})])
+        nodes = np_data["nodes"]
+        node_df = pd.DataFrame(nodes, columns=node_names, dtype=np.float32)
 
         if node_df.empty: # dont append edges to node list that contain no edges
             print("THERE IS AN EMPTY GRAPH, GTFO")
             exit()
+
+        scaled_features = pd.DataFrame(scaler.transform(node_df), columns=node_names)[features_to_scale]
+        node_df = pd.concat([node_df[unscaled_features], scaled_features], axis=1)
+
+        edges = np_data["edges"]
+        if edges.size != 0:
+            edge_df = pd.DataFrame(edges, columns=edge_names, dtype=np.int32)
+        else:
+            edge_df = pd.DataFrame([], columns=edge_names, dtype=np.int32)
+        node_df["file_name"] = graph_name
+        # Make graph undirected
+        edge_df = pd.concat([edge_df, edge_df.rename(columns={"source": "target", "target": "source"})])
 
         all_node_data.append(node_df)
         all_edge_data.append(edge_df)
@@ -245,13 +249,13 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         return avg_loss, metrics
     
     def fit(self, train_loader, optimizer, criterion, epochs, device, val_loader=None,
-            lr_scheduler=None, checkpoint_handlers=None, metrics_handler=None, log_dir=None):
+            lr_scheduler=None, checkpoint_handlers=None, metrics_handler=None, gat_log_dir=None):
 
         history = {'train_loss': [], 'train_metrics': [], 'val_loss': [], 'val_metrics': []}
 
         names = []
-        if log_dir != None:
-            with open(os.path.join(log_dir, "training.log"), 'w') as f:
+        if gat_log_dir != None:
+            with open(os.path.join(gat_log_dir, "training.log"), 'w') as f:
                 names = ["LOSS", "VAL_LOSS"]
                 names += metrics_handler.labels()
                 names += metrics_handler.labels(prefix="VAL_")
@@ -266,8 +270,8 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
 
             val_loss, val_metrics = self._validate_epoch(val_loader, criterion, device, metrics_handler=metrics_handler)
 
-            if log_dir != None:
-                with open(os.path.join(log_dir, "training.log"), 'a') as f:
+            if gat_log_dir != None:
+                with open(os.path.join(gat_log_dir, "training.log"), 'a') as f:
                     results = train_metrics
                     results.update(val_metrics)
                     results["LOSS"] = train_loss
@@ -334,12 +338,12 @@ def main(logdir, fold):
     BATCH_SIZE = 4
     CLASSES = [0,1,2]
 
-    data_path = os.path.join(logdir, fold)
+    base_path = os.path.join(logdir, fold)
     num_deep_feats = 4*3
-    log_dir = os.path.join(data_path, "gat_log")
-    os.makedirs(log_dir, exist_ok=True)
+    gat_log_dir = os.path.join(base_path, "gat_log")
+    os.makedirs(gat_log_dir, exist_ok=True)
 
-    train_datas, test_datas, val_datas = read_graphs(data_path, num_deep_feats, fold)
+    train_datas, test_datas, val_datas = read_graphs(base_path, num_deep_feats, fold)
 
     train_loader = DataLoader(train_datas, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_datas, batch_size=BATCH_SIZE)
@@ -357,8 +361,8 @@ def main(logdir, fold):
     gnn_hidden_dim = 128
     gnn_output_dim = 64
     num_graph_classes = 3
-    heads=6
-    learning_rate = 1e-4
+    heads=4
+    learning_rate = 1e-3
     weight_decay = 0
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -373,7 +377,7 @@ def main(logdir, fold):
         heads=heads
     ).to(device)
 
-    checkpoints = [MinCheckpoint(log_dir), Checkpoint(log_dir)]
+    checkpoints = [MinCheckpoint(gat_log_dir), Checkpoint(gat_log_dir)]
     optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     sceduler = lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=8)
@@ -381,23 +385,23 @@ def main(logdir, fold):
     class_weights = torch.tensor([1.0,1.2,1.6], device=device)
     criterion = CrossEntropyLoss(weight=class_weights)
 
-    history = model.fit(
-        train_loader,
-        optimizer,
-        criterion,
-        epochs=10,
-        val_loader=val_loader,
-        device=device,
-        checkpoint_handlers=checkpoints,
-        metrics_handler=metrics_handler,
-        log_dir=log_dir,
-        lr_scheduler=sceduler
-    )
+    # history = model.fit(
+    #     train_loader,
+    #     optimizer,
+    #     criterion,
+    #     epochs=10,
+    #     val_loader=val_loader,
+    #     device=device,
+    #     checkpoint_handlers=checkpoints,
+    #     metrics_handler=metrics_handler,
+    #     gat_log_dir=gat_log_dir,
+    #     lr_scheduler=sceduler
+    # )
 
-    # model.load_state_dict(torch.load("./logs/torch_gat/20250522_223936/gat_model_ckpt.pth", map_location=device))
+    model.load_state_dict(torch.load(f"./logs/UNETCV/{fold}/gat_log/gat_model_ckpt.pth", map_location=device))
 
     model.eval()
-    reconstruction_data_base_dir = os.path.join(data_path, "reconstruction")
+    reconstruction_data_base_dir = os.path.join(base_path, "graphs")
     gt_data_base_dir = "./data/05m_chips/labels"
 
     img_metrics_list = [
@@ -468,8 +472,8 @@ def main(logdir, fold):
     print("\n--- Image Segmentation Evaluation Complete ---")
     results_dict = img_metrics_handler.value(prefix="test_seg_")
 
-    if log_dir:
-        output_path = os.path.join(log_dir, "test_segmentation_metrics.csv")
+    if gat_log_dir:
+        output_path = os.path.join(gat_log_dir, "test_segmentation_metrics.csv")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, "w") as f:
             names = sorted(results_dict.keys())
