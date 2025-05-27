@@ -1,4 +1,8 @@
+print("!!! HELLO FROM THE GRAPH_PIPELINE I EXPECT TO RUN !!!")
+print(f"My location according to __file__ is: {__file__}")
+
 import os
+import sys
 import math
 import torch
 import numpy as np
@@ -90,7 +94,7 @@ def save_graph_data(j, img_file_name, nodes, connections, node_mask,
     np.savez_compressed(os.path.join(graph_dir, f"{img_file_name[j]}.npz"), 
                         nodes=nodes, edges=connections, image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
 
-def main(logdir, fold="tf1", batch_size=8):
+def main(logdir, device, fold, batch_size=8):
     train_fnames_path = f'./data/05m_folds/{fold}/train.dat'
     test_fnames_path = f'./data/05m_folds/{fold}/test.dat'
     valid_fnames_path = f'./data/05m_folds/{fold}/valid.dat'
@@ -110,7 +114,7 @@ def main(logdir, fold="tf1", batch_size=8):
     # 20250513_161035
     # instantiate the model
     test_model = UNet().to(device)
-    best_model_path = os.path.join(logdir, fold, '/unet/checkpoints/unet_model_epoch100.pth')
+    best_model_path = os.path.join(logdir, fold, 'unet/checkpoints/unet_model_epoch100.pth')
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
 
@@ -124,7 +128,7 @@ def main(logdir, fold="tf1", batch_size=8):
     test_model.down_conv4[-1].register_forward_hook(get_features("x7"))
     test_model.up_conv_1[-1].register_forward_hook(get_features("u7"))
 
-    graph_dir = os.path.join(logdir, 'graphs')
+    graph_dir = os.path.join(logdir, fold, 'graphs')
     os.makedirs(graph_dir, exist_ok=True)
 
     pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, graph_dir, n_components=4)
@@ -190,13 +194,13 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # get the arguments
-    parser = argparse.ArgumentParser(description='Create graphs')
-    parser.add_argument('--fold', type=str, default='tf1', help='What fold to use')
-    args = parser.parse_args()
+    pipiline_parser = argparse.ArgumentParser(description='Create graphs')
+    pipiline_parser.add_argument('--fold', type=str, default='tf1', help='What fold to use')
+    args = pipiline_parser.parse_args()
     fold = args.fold
     logdir = './logs/UNETCV'
 
-    main(logdir, fold, batch_size=8)
+    main(logdir, device, fold, batch_size=8)
     
     end_time = time.time()
     print('Total time taken: {:.2f} min'.format((end_time - begin_time) / 60))
