@@ -1,6 +1,3 @@
-print("!!! HELLO FROM THE GRAPH_PIPELINE I EXPECT TO RUN !!!")
-print(f"My location according to __file__ is: {__file__}")
-
 import os
 import sys
 import math
@@ -133,7 +130,7 @@ def main(logdir, device, fold, batch_size=8):
     graph_utils_dir = os.path.join(logdir, fold, 'graph_utils')
     os.makedirs(graph_utils_dir, exist_ok=True)
 
-    pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, graph_utils_dir, n_components=4)
+    # pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, graph_utils_dir, n_components=4)
 
     pca_x9 = pk.load(open(os.path.join(graph_utils_dir,"pca_x9.pkl"),'rb'))
     pca_x7 = pk.load(open(os.path.join(graph_utils_dir,"pca_x7.pkl"),'rb'))
@@ -145,6 +142,9 @@ def main(logdir, device, fold, batch_size=8):
     print('Iterating over the train dataset...')
     with multiprocessing.Pool(processes=8) as pool, ThreadPoolExecutor(max_workers=16) as executor:
         for batch_images, batch_labels, img_file_name in tqdm.tqdm(train_loader):
+            if "18E023_68950_6275_25_0048" not in img_file_name:
+                continue
+            print(img_file_name)
             # images, padding = test_model.add_padding(batch_images)
             batch_images = batch_images.to(device)
             labels = batch_labels.squeeze(1).long().to(device)
@@ -165,25 +165,38 @@ def main(logdir, device, fold, batch_size=8):
 
             flow_acc = np.array([tifffile.imread(os.path.join("./data/05m_chips/flow_acc", f"{image}.tif")) for image in img_file_name])
             twi = np.array([tifffile.imread(os.path.join("./data/05m_chips/twi", f"{image}.tif")) for image in img_file_name])
+            elevation = np.array([tifffile.imread(os.path.join("./data/05m_chips/elevation", f"{image}.tif")) for image in img_file_name])
 
-            graphs = pool.starmap(graph_processing.image_to_graph, [
-                (argmax_pred_cpu[i],
-                pred_cpu[i],
-                labes_cpu[i],
-                deep_x9[i],
-                deep_x7[i],
-                deep_u7[i],
-                batch_images_cpu[i],
-                flow_acc[i],
-                twi[i])
-                for i in range(pred_cpu.shape[0])
-            ])
+            [graph_processing.image_to_graph(argmax_pred_cpu[i],
+                                            pred_cpu[i],
+                                            labes_cpu[i],
+                                            deep_x9[i],
+                                            deep_x7[i],
+                                            deep_u7[i],
+                                            batch_images_cpu[i],
+                                            flow_acc[i],
+                                            twi[i],
+                                            elevation[i]) for i in range(pred_cpu.shape[0])]# if img_file_name[i] == "18E023_68950_6275_25_0048"]
 
-            _ = [scaler.partial_fit(nodes) for nodes, _, _ in graphs if nodes.shape[0] > 0]
+            # graphs = pool.starmap(graph_processing.image_to_graph, [
+            #     (argmax_pred_cpu[i],
+            #     pred_cpu[i],
+            #     labes_cpu[i],
+            #     deep_x9[i],
+            #     deep_x7[i],
+            #     deep_u7[i],
+            #     batch_images_cpu[i],
+            #     flow_acc[i],
+            #     twi[i],
+            #     elevation[i])
+            #     for i in range(pred_cpu.shape[0])
+            # ])
 
-            for j, (nodes, connections, node_mask) in enumerate(graphs):
-                executor.submit(save_graph_data, j, img_file_name, nodes, connections,
-                                node_mask, argmax_pred_cpu, graph_dir)
+            # _ = [scaler.partial_fit(nodes) for nodes, _, _ in graphs if nodes.shape[0] > 0]
+
+            # for j, (nodes, connections, node_mask) in enumerate(graphs):
+            #     executor.submit(save_graph_data, j, img_file_name, nodes, connections,
+            #                     node_mask, argmax_pred_cpu, graph_dir)
 
     pk.dump(scaler, open(os.path.join(graph_utils_dir, "nodes_scaler.pkl"), "wb"))
 

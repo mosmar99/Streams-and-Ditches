@@ -85,7 +85,7 @@ def read_graphs(data_path, num_deep_feats, fold):
         edge_index = torch.tensor(edge_df[['source', 'target']].values.T, dtype=torch.long)
 
         # Extract node features (excluding 'node_id', 'center_x', 'center_y', 'file_name', 'target')
-        feature_columns = ["prob_0", "prob_1", "prob_2", *slope_feature_names, *twi_flowacc_feature_names, *deep_feats] # , *deep_feats
+        feature_columns = ["prob_0", "prob_1", "prob_2", *slope_feature_names, *twi_flowacc_feature_names] # , *slope_feature_names, *twi_flowacc_feature_names, *deep_feats
         x = torch.tensor(node_df[feature_columns].values, dtype=torch.float32)
 
         # Extract target (optional: for node classification/regression)
@@ -149,7 +149,7 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         self.gn4 = GraphNorm(hidden_channels_gnn * heads)
 
         self.conv5 = GATv2Conv(hidden_channels_gnn * heads, hidden_channels_gnn, heads=heads, concat=False, dropout=dropout_rate, residual=True)
-        self.gn_5 = GraphNorm(hidden_channels_gnn)
+        self.gn5 = GraphNorm(hidden_channels_gnn)
 
         self.olin1 = torch.nn.Linear(hidden_channels_gnn, hidden_channels_gnn)
 
@@ -183,6 +183,7 @@ class GATv2Net_NodeClassifier(torch.nn.Module):
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
         x = self.conv5(x, edge_index)
+        x = self.gn5(x, batch)
         x = F.relu(x)
         x = F.dropout(x, p=self.dropout_rate, training=self.training)
 
@@ -335,7 +336,7 @@ def main(logdir, fold):
     import matplotlib.pyplot as plt
 
     SEED = 42
-    BATCH_SIZE = 4
+    BATCH_SIZE = 32
     CLASSES = [0,1,2]
 
     base_path = os.path.join(logdir, fold)
@@ -357,13 +358,13 @@ def main(logdir, fold):
     
     metrics_handler = metrics.MetricsList(metrics_list)
 
-    num_node_features = 28
-    gnn_hidden_dim = 128
+    num_node_features = 16 #28 full
+    gnn_hidden_dim = 64
     gnn_output_dim = 64
     num_graph_classes = 3
     heads=4
-    learning_rate = 1e-3
-    weight_decay = 0
+    learning_rate = 2e-4
+    weight_decay = 1e-6
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
@@ -382,21 +383,21 @@ def main(logdir, fold):
 
     sceduler = lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=8)
 
-    class_weights = torch.tensor([1.0,1.2,1.6], device=device)
+    class_weights = torch.tensor([1.0,1.2,2.0], device=device)
     criterion = CrossEntropyLoss(weight=class_weights)
 
-    # history = model.fit(
-    #     train_loader,
-    #     optimizer,
-    #     criterion,
-    #     epochs=10,
-    #     val_loader=val_loader,
-    #     device=device,
-    #     checkpoint_handlers=checkpoints,
-    #     metrics_handler=metrics_handler,
-    #     gat_log_dir=gat_log_dir,
-    #     lr_scheduler=sceduler
-    # )
+    history = model.fit(
+        train_loader,
+        optimizer,
+        criterion,
+        epochs=15,
+        val_loader=val_loader,
+        device=device,
+        checkpoint_handlers=checkpoints,
+        metrics_handler=metrics_handler,
+        gat_log_dir=gat_log_dir,
+        lr_scheduler=sceduler
+    )
 
     model.load_state_dict(torch.load(f"./logs/UNETCV/{fold}/gat_log/gat_model_ckpt.pth", map_location=device))
 

@@ -26,6 +26,24 @@ def color_segments_rand(segments):
     
     return colored_labels
 
+def segments_rand(segments, seed=42):
+    np.random.seed(seed)
+   # Generate random colors for each label
+    unique_labels = np.unique(segments)  # Find all unique segment labels
+    random_colors = np.array([np.random.randint(3000,10000)/10000.0 for _ in unique_labels])  # Random RGB colors
+
+    # Initialize the colored label image
+    colored_labels = np.zeros((segments.shape[0], segments.shape[1]))
+
+    # Assign random colors to each label
+    for i, label in enumerate(unique_labels):
+        if label == 0:
+            colored_labels[segments == label] = 0
+        else:
+            colored_labels[segments == label] = random_colors[i]
+    
+    return colored_labels
+
 def get_seg_bbox(segment_mask):
     ys, xs = np.where(segment_mask)
 
@@ -173,7 +191,7 @@ def extract_majority_labels(multi_seg_mask, target):
         target_masked = target[seg_mask]
         unique, counts = np.unique(target_masked, return_counts=True)
 
-        # counts[unique == 0] = counts[unique == 0]//6
+        counts[unique == 0] = counts[unique == 0]//2
 
         majority_index = np.argmax(counts)
         labels.append(unique[majority_index])
@@ -206,16 +224,20 @@ def extract_deep_features(coords, target):
 
 def segmentation_slic(image_probs):
     shedsl = slic(image_probs, n_segments=4800, channel_axis=0)
-    shed_alpha = remove_square_segments_optimized(shedsl, min_in_seg=0.97)
+    shed_alpha = remove_square_segments_optimized(shedsl, min_in_seg=0.99)
 
-    # vmin = 0
-    # vmax = 2
-    # fig, ax = plt.subplots(1,2)
-    # ax[0].imshow(color_segments_rand(shed_alpha))
-    # ax[0].set_title("shed_alpha")
-    # ax[1].imshow(color_segments_rand(shedsl))
-    # ax[1].set_title("shedsl")
-    # plt.show()
+    vmin = 0
+    vmax = 2
+    fig, ax = plt.subplots(1,3, sharex=True, sharey=True, figsize=(15, 5))
+    ax[0].imshow(image_probs.transpose(1,2,0), cmap="magma")
+    ax[0].set_title("Unet Probabilities")
+    ax[1].imshow(segments_rand(shedsl), vmin=0, vmax=1, cmap="magma")
+    ax[1].set_title("Segmentation")
+    ax[2].imshow(np.zeros_like(shedsl), cmap="magma")
+    ax[2].imshow(segments_rand(shedsl), alpha=(shed_alpha!=0).astype(np.float32), vmin=0, vmax=1, cmap="magma")
+    ax[2].set_title("Segmentation Filtered")
+    plt.savefig('graph_creation.png', dpi=300, bbox_inches='tight')
+    plt.show()
 
     return shed_alpha
 
@@ -244,7 +266,8 @@ def segmentation_canny_ws(image_preds):
     ws_alpha = fill_small_segments(ws_alpha)
     return ws_alpha
 
-def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, feature_map_x7, feature_map_u7, slope_image, flow_acc, twi):
+def image_to_graph(image_preds, image_probs, label_image, feature_map_x9, feature_map_x7, feature_map_u7, slope_image, flow_acc, twi, elevation):
+    # ws_alpha = segmentation_slic_all(elevation, label_image)
     ws_alpha = segmentation_slic(image_probs)
 
     labels = np.unique(ws_alpha)
