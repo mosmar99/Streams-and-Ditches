@@ -1,2 +1,0 @@
-now processing task id:: 5633 on worker3.slurm.hj.se
-slurmstepd-worker3.slurm.hj.se: error: *** JOB 5633 ON worker3.slurm.hj.se CANCELLED AT 2025-05-24T08:28:22 DUE TO TIME LIMIT ***

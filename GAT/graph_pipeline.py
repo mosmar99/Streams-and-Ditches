@@ -5,10 +5,10 @@ import torch
 import numpy as np
 import torch.nn as nn
 from PIL import Image
-from fresh.models.unet import UNet
-from fresh.data.loading import UNetDataset
+from UNet.models.unet import UNet
+from UNet.data.loading import UNetDataset
 from torch.utils.data import DataLoader
-import mapio.graph_processing as graph_processing
+import GAT.graph_processing as graph_processing
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA, IncrementalPCA
 import umap
