@@ -226,19 +226,6 @@ def segmentation_slic(image_probs):
     shedsl = slic(image_probs, n_segments=4800, channel_axis=0)
     shed_alpha = remove_square_segments_optimized(shedsl, min_in_seg=0.99)
 
-    vmin = 0
-    vmax = 2
-    fig, ax = plt.subplots(1,3, sharex=True, sharey=True, figsize=(15, 5))
-    ax[0].imshow(image_probs.transpose(1,2,0), cmap="magma")
-    ax[0].set_title("Unet Probabilities")
-    ax[1].imshow(segments_rand(shedsl), vmin=0, vmax=1, cmap="magma")
-    ax[1].set_title("Segmentation")
-    ax[2].imshow(np.zeros_like(shedsl), cmap="magma")
-    ax[2].imshow(segments_rand(shedsl), alpha=(shed_alpha!=0).astype(np.float32), vmin=0, vmax=1, cmap="magma")
-    ax[2].set_title("Segmentation Filtered")
-    plt.savefig('graph_creation.png', dpi=300, bbox_inches='tight')
-    plt.show()
-
     return shed_alpha
 
 def segmentation_canny_ws(image_preds):

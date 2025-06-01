@@ -363,7 +363,7 @@ def main(logdir, fold):
     gnn_output_dim = 64
     num_graph_classes = 3
     heads=4
-    learning_rate = 2e-4
+    learning_rate = 5e-4
     weight_decay = 1e-6
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -381,7 +381,7 @@ def main(logdir, fold):
     checkpoints = [MinCheckpoint(gat_log_dir), Checkpoint(gat_log_dir)]
     optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    sceduler = lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=8)
+    # sceduler = lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=8)
 
     class_weights = torch.tensor([1.0,1.2,2.0], device=device)
     criterion = CrossEntropyLoss(weight=class_weights)
@@ -396,7 +396,7 @@ def main(logdir, fold):
         checkpoint_handlers=checkpoints,
         metrics_handler=metrics_handler,
         gat_log_dir=gat_log_dir,
-        lr_scheduler=sceduler
+        # lr_scheduler=sceduler
     )
 
     model.load_state_dict(torch.load(f"./logs/UNETCV/{fold}/gat_log/gat_model_ckpt.pth", map_location=device))

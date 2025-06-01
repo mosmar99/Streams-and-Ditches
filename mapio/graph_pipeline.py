@@ -178,25 +178,25 @@ def main(logdir, device, fold, batch_size=8):
                                             twi[i],
                                             elevation[i]) for i in range(pred_cpu.shape[0])]# if img_file_name[i] == "18E023_68950_6275_25_0048"]
 
-            # graphs = pool.starmap(graph_processing.image_to_graph, [
-            #     (argmax_pred_cpu[i],
-            #     pred_cpu[i],
-            #     labes_cpu[i],
-            #     deep_x9[i],
-            #     deep_x7[i],
-            #     deep_u7[i],
-            #     batch_images_cpu[i],
-            #     flow_acc[i],
-            #     twi[i],
-            #     elevation[i])
-            #     for i in range(pred_cpu.shape[0])
-            # ])
+            graphs = pool.starmap(graph_processing.image_to_graph, [
+                (argmax_pred_cpu[i],
+                pred_cpu[i],
+                labes_cpu[i],
+                deep_x9[i],
+                deep_x7[i],
+                deep_u7[i],
+                batch_images_cpu[i],
+                flow_acc[i],
+                twi[i],
+                elevation[i])
+                for i in range(pred_cpu.shape[0])
+            ])
 
-            # _ = [scaler.partial_fit(nodes) for nodes, _, _ in graphs if nodes.shape[0] > 0]
+            _ = [scaler.partial_fit(nodes) for nodes, _, _ in graphs if nodes.shape[0] > 0]
 
-            # for j, (nodes, connections, node_mask) in enumerate(graphs):
-            #     executor.submit(save_graph_data, j, img_file_name, nodes, connections,
-            #                     node_mask, argmax_pred_cpu, graph_dir)
+            for j, (nodes, connections, node_mask) in enumerate(graphs):
+                executor.submit(save_graph_data, j, img_file_name, nodes, connections,
+                                node_mask, argmax_pred_cpu, graph_dir)
 
     pk.dump(scaler, open(os.path.join(graph_utils_dir, "nodes_scaler.pkl"), "wb"))
 
