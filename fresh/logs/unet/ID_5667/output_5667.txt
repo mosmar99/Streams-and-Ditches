@@ -1,0 +1,26 @@
+Beginning to load data...
+ -- Train dataset size: 4134 / 4593 ~ 0.9
+ -- Test dataset size: 459 / 4593 ~ 0.1
+ -- Created DataLoaders with batch size: 8
+Starting testing on 459 images...
+  Batch [10/58], Loss: 0.3297
+  Batch [20/58], Loss: 0.3775
+  Batch [30/58], Loss: 0.3997
+  Batch [40/58], Loss: 0.3370
+  Batch [50/58], Loss: 0.3682
+--- Testing complete. Average Test Loss: 0.3373 ---
+--- Time taken for testing: 14.00 seconds ---
+Overall Pixel Accuracy: 0.9933
+Mean IoU: 0.6002
+Mean Dice: 0.6993
+Mean Precision: 0.7313
+Mean Recall: 0.6870
+
+--- Per-Class Metrics ---
+Class | Precision | Recall    | IoU       | Dice
+0     | 0.9971    | 0.9965    | 0.9936    | 0.9968
+1     | 0.7030    | 0.7784    | 0.5858    | 0.7388
+2     | 0.4937    | 0.2860    | 0.2211    | 0.3622
+UNet testing finished.
+UNet testing process completed.
+Test Metrics: {'avg_test_loss': 0.33733512996848114, 'overall_pixel_accuracy': 0.9933444793028313, 'mean_iou': np.float64(0.6001882573581542), 'mean_dice': np.float64(0.699264368909173), 'mean_precision': np.float64(0.7312650257324272), 'mean_recall': np.float64(0.6869774594128581), 'per_class_iou': [0.9936327276261286, 0.5857917281316914, 0.22114031631664258], 'per_class_dice': [0.9968061959027664, 0.7388003326538283, 0.36218657817092453], 'per_class_precision': [0.9971219811327022, 0.7030119117306809, 0.49366118433389833], 'per_class_recall': [0.9964906106257787, 0.778427980132386, 0.28601378748040995]}

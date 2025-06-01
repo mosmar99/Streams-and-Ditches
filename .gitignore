@@ -3,3 +3,6 @@
 /checkpoints
 /tutorial
 *__pycache__
+/fresh/data/processed
+/fresh/data/raw
+*.png

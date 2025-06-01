@@ -1,0 +1,1418 @@
+Beginning to load data...
+ -- Train dataset size: 66144 / 73488 ~ 0.9
+ -- Test dataset size: 7344 / 73488 ~ 0.1
+ -- Created DataLoaders with batch size: 128
+
+Starting UNet Training...
+  Epoch [1/200], Batch [100/517], Loss: 0.6214
+  Epoch [1/200], Batch [200/517], Loss: 0.4706
+  Epoch [1/200], Batch [300/517], Loss: 0.4196
+  Epoch [1/200], Batch [400/517], Loss: 0.4335
+  Epoch [1/200], Batch [500/517], Loss: 0.3707
+--- Epoch [1/200] complete. Average Training Loss: 0.4991 ---
+--- Time taken for epoch: 314.63 seconds ---
+  Epoch [2/200], Batch [100/517], Loss: 0.4225
+  Epoch [2/200], Batch [200/517], Loss: 0.4129
+  Epoch [2/200], Batch [300/517], Loss: 0.3195
+  Epoch [2/200], Batch [400/517], Loss: 0.3969
+  Epoch [2/200], Batch [500/517], Loss: 0.4087
+--- Epoch [2/200] complete. Average Training Loss: 0.3942 ---
+--- Time taken for epoch: 314.31 seconds ---
+  Epoch [3/200], Batch [100/517], Loss: 0.3891
+  Epoch [3/200], Batch [200/517], Loss: 0.3862
+  Epoch [3/200], Batch [300/517], Loss: 0.3805
+  Epoch [3/200], Batch [400/517], Loss: 0.3305
+  Epoch [3/200], Batch [500/517], Loss: 0.2894
+--- Epoch [3/200] complete. Average Training Loss: 0.3749 ---
+--- Time taken for epoch: 314.23 seconds ---
+  Epoch [4/200], Batch [100/517], Loss: 0.3176
+  Epoch [4/200], Batch [200/517], Loss: 0.3417
+  Epoch [4/200], Batch [300/517], Loss: 0.3008
+  Epoch [4/200], Batch [400/517], Loss: 0.3588
+  Epoch [4/200], Batch [500/517], Loss: 0.3178
+--- Epoch [4/200] complete. Average Training Loss: 0.3589 ---
+--- Time taken for epoch: 314.22 seconds ---
+  Epoch [5/200], Batch [100/517], Loss: 0.3291
+  Epoch [5/200], Batch [200/517], Loss: 0.2907
+  Epoch [5/200], Batch [300/517], Loss: 0.3471
+  Epoch [5/200], Batch [400/517], Loss: 0.3905
+  Epoch [5/200], Batch [500/517], Loss: 0.3128
+--- Epoch [5/200] complete. Average Training Loss: 0.3515 ---
+--- Time taken for epoch: 314.12 seconds ---
+  Epoch [6/200], Batch [100/517], Loss: 0.4270
+  Epoch [6/200], Batch [200/517], Loss: 0.3345
+  Epoch [6/200], Batch [300/517], Loss: 0.3504
+  Epoch [6/200], Batch [400/517], Loss: 0.2905
+  Epoch [6/200], Batch [500/517], Loss: 0.3802
+--- Epoch [6/200] complete. Average Training Loss: 0.3515 ---
+--- Time taken for epoch: 314.07 seconds ---
+  Epoch [7/200], Batch [100/517], Loss: 0.3622
+  Epoch [7/200], Batch [200/517], Loss: 0.3053
+  Epoch [7/200], Batch [300/517], Loss: 0.3618
+  Epoch [7/200], Batch [400/517], Loss: 0.2960
+  Epoch [7/200], Batch [500/517], Loss: 0.4115
+--- Epoch [7/200] complete. Average Training Loss: 0.3402 ---
+--- Time taken for epoch: 314.10 seconds ---
+  Epoch [8/200], Batch [100/517], Loss: 0.3668
+  Epoch [8/200], Batch [200/517], Loss: 0.3677
+  Epoch [8/200], Batch [300/517], Loss: 0.2129
+  Epoch [8/200], Batch [400/517], Loss: 0.2621
+  Epoch [8/200], Batch [500/517], Loss: 0.3414
+--- Epoch [8/200] complete. Average Training Loss: 0.3296 ---
+--- Time taken for epoch: 313.97 seconds ---
+  Epoch [9/200], Batch [100/517], Loss: 0.4224
+  Epoch [9/200], Batch [200/517], Loss: 0.3918
+  Epoch [9/200], Batch [300/517], Loss: 0.3993
+  Epoch [9/200], Batch [400/517], Loss: 0.3350
+  Epoch [9/200], Batch [500/517], Loss: 0.3437
+--- Epoch [9/200] complete. Average Training Loss: 0.3301 ---
+--- Time taken for epoch: 314.11 seconds ---
+  Epoch [10/200], Batch [100/517], Loss: 0.2722
+  Epoch [10/200], Batch [200/517], Loss: 0.2615
+  Epoch [10/200], Batch [300/517], Loss: 0.3040
+  Epoch [10/200], Batch [400/517], Loss: 0.2339
+  Epoch [10/200], Batch [500/517], Loss: 0.2825
+--- Epoch [10/200] complete. Average Training Loss: 0.3210 ---
+--- Time taken for epoch: 314.27 seconds ---
+  Epoch [11/200], Batch [100/517], Loss: 0.4216
+  Epoch [11/200], Batch [200/517], Loss: 0.2856
+  Epoch [11/200], Batch [300/517], Loss: 0.3581
+  Epoch [11/200], Batch [400/517], Loss: 0.3134
+  Epoch [11/200], Batch [500/517], Loss: 0.2461
+--- Epoch [11/200] complete. Average Training Loss: 0.3199 ---
+--- Time taken for epoch: 314.03 seconds ---
+  Epoch [12/200], Batch [100/517], Loss: 0.2592
+  Epoch [12/200], Batch [200/517], Loss: 0.2221
+  Epoch [12/200], Batch [300/517], Loss: 0.3016
+  Epoch [12/200], Batch [400/517], Loss: 0.3386
+  Epoch [12/200], Batch [500/517], Loss: 0.3174
+--- Epoch [12/200] complete. Average Training Loss: 0.3160 ---
+--- Time taken for epoch: 314.17 seconds ---
+  Epoch [13/200], Batch [100/517], Loss: 0.2690
+  Epoch [13/200], Batch [200/517], Loss: 0.3830
+  Epoch [13/200], Batch [300/517], Loss: 0.2616
+  Epoch [13/200], Batch [400/517], Loss: 0.3727
+  Epoch [13/200], Batch [500/517], Loss: 0.3039
+--- Epoch [13/200] complete. Average Training Loss: 0.3118 ---
+--- Time taken for epoch: 314.04 seconds ---
+  Epoch [14/200], Batch [100/517], Loss: 0.2552
+  Epoch [14/200], Batch [200/517], Loss: 0.2131
+  Epoch [14/200], Batch [300/517], Loss: 0.4157
+  Epoch [14/200], Batch [400/517], Loss: 0.4031
+  Epoch [14/200], Batch [500/517], Loss: 0.3260
+--- Epoch [14/200] complete. Average Training Loss: 0.3060 ---
+--- Time taken for epoch: 314.13 seconds ---
+  Epoch [15/200], Batch [100/517], Loss: 0.2464
+  Epoch [15/200], Batch [200/517], Loss: 0.3089
+  Epoch [15/200], Batch [300/517], Loss: 0.2159
+  Epoch [15/200], Batch [400/517], Loss: 0.2512
+  Epoch [15/200], Batch [500/517], Loss: 0.2855
+--- Epoch [15/200] complete. Average Training Loss: 0.3047 ---
+--- Time taken for epoch: 314.01 seconds ---
+  Epoch [16/200], Batch [100/517], Loss: 0.2529
+  Epoch [16/200], Batch [200/517], Loss: 0.3983
+  Epoch [16/200], Batch [300/517], Loss: 0.2765
+  Epoch [16/200], Batch [400/517], Loss: 0.3219
+  Epoch [16/200], Batch [500/517], Loss: 0.2241
+--- Epoch [16/200] complete. Average Training Loss: 0.3019 ---
+--- Time taken for epoch: 313.97 seconds ---
+  Epoch [17/200], Batch [100/517], Loss: 0.3191
+  Epoch [17/200], Batch [200/517], Loss: 0.2958
+  Epoch [17/200], Batch [300/517], Loss: 0.3124
+  Epoch [17/200], Batch [400/517], Loss: 0.3349
+  Epoch [17/200], Batch [500/517], Loss: 0.2270
+--- Epoch [17/200] complete. Average Training Loss: 0.2976 ---
+--- Time taken for epoch: 313.96 seconds ---
+  Epoch [18/200], Batch [100/517], Loss: 0.1950
+  Epoch [18/200], Batch [200/517], Loss: 0.2793
+  Epoch [18/200], Batch [300/517], Loss: 0.3509
+  Epoch [18/200], Batch [400/517], Loss: 0.2526
+  Epoch [18/200], Batch [500/517], Loss: 0.2781
+--- Epoch [18/200] complete. Average Training Loss: 0.2974 ---
+--- Time taken for epoch: 314.15 seconds ---
+  Epoch [19/200], Batch [100/517], Loss: 0.2228
+  Epoch [19/200], Batch [200/517], Loss: 0.2461
+  Epoch [19/200], Batch [300/517], Loss: 0.4237
+  Epoch [19/200], Batch [400/517], Loss: 0.3012
+  Epoch [19/200], Batch [500/517], Loss: 0.3126
+--- Epoch [19/200] complete. Average Training Loss: 0.2915 ---
+--- Time taken for epoch: 314.00 seconds ---
+  Epoch [20/200], Batch [100/517], Loss: 0.3028
+  Epoch [20/200], Batch [200/517], Loss: 0.2638
+  Epoch [20/200], Batch [300/517], Loss: 0.2563
+  Epoch [20/200], Batch [400/517], Loss: 0.3222
+  Epoch [20/200], Batch [500/517], Loss: 0.3551
+--- Epoch [20/200] complete. Average Training Loss: 0.2932 ---
+--- Time taken for epoch: 314.04 seconds ---
+  Epoch [21/200], Batch [100/517], Loss: 0.2965
+  Epoch [21/200], Batch [200/517], Loss: 0.2855
+  Epoch [21/200], Batch [300/517], Loss: 0.2945
+  Epoch [21/200], Batch [400/517], Loss: 0.2234
+  Epoch [21/200], Batch [500/517], Loss: 0.2448
+--- Epoch [21/200] complete. Average Training Loss: 0.2865 ---
+--- Time taken for epoch: 314.08 seconds ---
+  Epoch [22/200], Batch [100/517], Loss: 0.4203
+  Epoch [22/200], Batch [200/517], Loss: 0.3938
+  Epoch [22/200], Batch [300/517], Loss: 0.3333
+  Epoch [22/200], Batch [400/517], Loss: 0.2777
+  Epoch [22/200], Batch [500/517], Loss: 0.2496
+--- Epoch [22/200] complete. Average Training Loss: 0.2888 ---
+--- Time taken for epoch: 314.08 seconds ---
+  Epoch [23/200], Batch [100/517], Loss: 0.2438
+  Epoch [23/200], Batch [200/517], Loss: 0.3647
+  Epoch [23/200], Batch [300/517], Loss: 0.4026
+  Epoch [23/200], Batch [400/517], Loss: 0.2931
+  Epoch [23/200], Batch [500/517], Loss: 0.1958
+--- Epoch [23/200] complete. Average Training Loss: 0.2776 ---
+--- Time taken for epoch: 314.10 seconds ---
+  Epoch [24/200], Batch [100/517], Loss: 0.2673
+  Epoch [24/200], Batch [200/517], Loss: 0.2366
+  Epoch [24/200], Batch [300/517], Loss: 0.2886
+  Epoch [24/200], Batch [400/517], Loss: 0.3193
+  Epoch [24/200], Batch [500/517], Loss: 0.1865
+--- Epoch [24/200] complete. Average Training Loss: 0.2712 ---
+--- Time taken for epoch: 314.09 seconds ---
+  Epoch [25/200], Batch [100/517], Loss: 0.2459
+  Epoch [25/200], Batch [200/517], Loss: 0.2464
+  Epoch [25/200], Batch [300/517], Loss: 0.2960
+  Epoch [25/200], Batch [400/517], Loss: 0.3150
+  Epoch [25/200], Batch [500/517], Loss: 0.2514
+--- Epoch [25/200] complete. Average Training Loss: 0.2775 ---
+--- Time taken for epoch: 314.11 seconds ---
+ -- Updated Checkpoint: Saved model at 25 epochs.
+  Epoch [26/200], Batch [100/517], Loss: 0.3352
+  Epoch [26/200], Batch [200/517], Loss: 0.3754
+  Epoch [26/200], Batch [300/517], Loss: 0.2553
+  Epoch [26/200], Batch [400/517], Loss: 0.3049
+  Epoch [26/200], Batch [500/517], Loss: 0.3243
+--- Epoch [26/200] complete. Average Training Loss: 0.2747 ---
+--- Time taken for epoch: 314.20 seconds ---
+  Epoch [27/200], Batch [100/517], Loss: 0.3149
+  Epoch [27/200], Batch [200/517], Loss: 0.2235
+  Epoch [27/200], Batch [300/517], Loss: 0.1766
+  Epoch [27/200], Batch [400/517], Loss: 0.2005
+  Epoch [27/200], Batch [500/517], Loss: 0.2625
+--- Epoch [27/200] complete. Average Training Loss: 0.2662 ---
+--- Time taken for epoch: 314.18 seconds ---
+  Epoch [28/200], Batch [100/517], Loss: 0.2399
+  Epoch [28/200], Batch [200/517], Loss: 0.2419
+  Epoch [28/200], Batch [300/517], Loss: 0.1799
+  Epoch [28/200], Batch [400/517], Loss: 0.1908
+  Epoch [28/200], Batch [500/517], Loss: 0.3155
+--- Epoch [28/200] complete. Average Training Loss: 0.2653 ---
+--- Time taken for epoch: 314.19 seconds ---
+  Epoch [29/200], Batch [100/517], Loss: 0.2407
+  Epoch [29/200], Batch [200/517], Loss: 0.2921
+  Epoch [29/200], Batch [300/517], Loss: 0.2877
+  Epoch [29/200], Batch [400/517], Loss: 0.2110
+  Epoch [29/200], Batch [500/517], Loss: 0.2462
+--- Epoch [29/200] complete. Average Training Loss: 0.2691 ---
+--- Time taken for epoch: 314.15 seconds ---
+  Epoch [30/200], Batch [100/517], Loss: 0.2479
+  Epoch [30/200], Batch [200/517], Loss: 0.2634
+  Epoch [30/200], Batch [300/517], Loss: 0.2161
+  Epoch [30/200], Batch [400/517], Loss: 0.3024
+  Epoch [30/200], Batch [500/517], Loss: 0.2052
+--- Epoch [30/200] complete. Average Training Loss: 0.2606 ---
+--- Time taken for epoch: 314.15 seconds ---
+  Epoch [31/200], Batch [100/517], Loss: 0.3041
+  Epoch [31/200], Batch [200/517], Loss: 0.2454
+  Epoch [31/200], Batch [300/517], Loss: 0.2423
+  Epoch [31/200], Batch [400/517], Loss: 0.2507
+  Epoch [31/200], Batch [500/517], Loss: 0.3141
+--- Epoch [31/200] complete. Average Training Loss: 0.2554 ---
+--- Time taken for epoch: 314.19 seconds ---
+  Epoch [32/200], Batch [100/517], Loss: 0.2097
+  Epoch [32/200], Batch [200/517], Loss: 0.2862
+  Epoch [32/200], Batch [300/517], Loss: 0.1910
+  Epoch [32/200], Batch [400/517], Loss: 0.1809
+  Epoch [32/200], Batch [500/517], Loss: 0.2957
+--- Epoch [32/200] complete. Average Training Loss: 0.2596 ---
+--- Time taken for epoch: 314.17 seconds ---
+  Epoch [33/200], Batch [100/517], Loss: 0.2666
+  Epoch [33/200], Batch [200/517], Loss: 0.2694
+  Epoch [33/200], Batch [300/517], Loss: 0.2409
+  Epoch [33/200], Batch [400/517], Loss: 0.2128
+  Epoch [33/200], Batch [500/517], Loss: 0.2828
+--- Epoch [33/200] complete. Average Training Loss: 0.2660 ---
+--- Time taken for epoch: 314.07 seconds ---
+  Epoch [34/200], Batch [100/517], Loss: 0.2548
+  Epoch [34/200], Batch [200/517], Loss: 0.1858
+  Epoch [34/200], Batch [300/517], Loss: 0.2133
+  Epoch [34/200], Batch [400/517], Loss: 0.2526
+  Epoch [34/200], Batch [500/517], Loss: 0.1773
+--- Epoch [34/200] complete. Average Training Loss: 0.2597 ---
+--- Time taken for epoch: 314.24 seconds ---
+  Epoch [35/200], Batch [100/517], Loss: 0.2396
+  Epoch [35/200], Batch [200/517], Loss: 0.3001
+  Epoch [35/200], Batch [300/517], Loss: 0.1982
+  Epoch [35/200], Batch [400/517], Loss: 0.1853
+  Epoch [35/200], Batch [500/517], Loss: 0.2592
+--- Epoch [35/200] complete. Average Training Loss: 0.2493 ---
+--- Time taken for epoch: 314.18 seconds ---
+  Epoch [36/200], Batch [100/517], Loss: 0.1919
+  Epoch [36/200], Batch [200/517], Loss: 0.2454
+  Epoch [36/200], Batch [300/517], Loss: 0.1826
+  Epoch [36/200], Batch [400/517], Loss: 0.2256
+  Epoch [36/200], Batch [500/517], Loss: 0.2417
+--- Epoch [36/200] complete. Average Training Loss: 0.2488 ---
+--- Time taken for epoch: 314.22 seconds ---
+  Epoch [37/200], Batch [100/517], Loss: 0.2314
+  Epoch [37/200], Batch [200/517], Loss: 0.2663
+  Epoch [37/200], Batch [300/517], Loss: 0.2469
+  Epoch [37/200], Batch [400/517], Loss: 0.2448
+  Epoch [37/200], Batch [500/517], Loss: 0.2914
+--- Epoch [37/200] complete. Average Training Loss: 0.2477 ---
+--- Time taken for epoch: 314.12 seconds ---
+  Epoch [38/200], Batch [100/517], Loss: 0.2488
+  Epoch [38/200], Batch [200/517], Loss: 0.2403
+  Epoch [38/200], Batch [300/517], Loss: 0.3111
+  Epoch [38/200], Batch [400/517], Loss: 0.2532
+  Epoch [38/200], Batch [500/517], Loss: 0.3147
+--- Epoch [38/200] complete. Average Training Loss: 0.2490 ---
+--- Time taken for epoch: 314.23 seconds ---
+  Epoch [39/200], Batch [100/517], Loss: 0.2582
+  Epoch [39/200], Batch [200/517], Loss: 0.2602
+  Epoch [39/200], Batch [300/517], Loss: 0.2073
+  Epoch [39/200], Batch [400/517], Loss: 0.1564
+  Epoch [39/200], Batch [500/517], Loss: 0.1837
+--- Epoch [39/200] complete. Average Training Loss: 0.2449 ---
+--- Time taken for epoch: 314.32 seconds ---
+  Epoch [40/200], Batch [100/517], Loss: 0.2411
+  Epoch [40/200], Batch [200/517], Loss: 0.1965
+  Epoch [40/200], Batch [300/517], Loss: 0.2870
+  Epoch [40/200], Batch [400/517], Loss: 0.3924
+  Epoch [40/200], Batch [500/517], Loss: 0.3067
+--- Epoch [40/200] complete. Average Training Loss: 0.2430 ---
+--- Time taken for epoch: 314.07 seconds ---
+  Epoch [41/200], Batch [100/517], Loss: 0.1304
+  Epoch [41/200], Batch [200/517], Loss: 0.2553
+  Epoch [41/200], Batch [300/517], Loss: 0.1779
+  Epoch [41/200], Batch [400/517], Loss: 0.2225
+  Epoch [41/200], Batch [500/517], Loss: 0.3726
+--- Epoch [41/200] complete. Average Training Loss: 0.2450 ---
+--- Time taken for epoch: 314.20 seconds ---
+  Epoch [42/200], Batch [100/517], Loss: 0.1542
+  Epoch [42/200], Batch [200/517], Loss: 0.2885
+  Epoch [42/200], Batch [300/517], Loss: 0.2268
+  Epoch [42/200], Batch [400/517], Loss: 0.2405
+  Epoch [42/200], Batch [500/517], Loss: 0.2053
+--- Epoch [42/200] complete. Average Training Loss: 0.2449 ---
+--- Time taken for epoch: 314.31 seconds ---
+  Epoch [43/200], Batch [100/517], Loss: 0.2536
+  Epoch [43/200], Batch [200/517], Loss: 0.2189
+  Epoch [43/200], Batch [300/517], Loss: 0.2631
+  Epoch [43/200], Batch [400/517], Loss: 0.2316
+  Epoch [43/200], Batch [500/517], Loss: 0.2032
+--- Epoch [43/200] complete. Average Training Loss: 0.2336 ---
+--- Time taken for epoch: 314.28 seconds ---
+  Epoch [44/200], Batch [100/517], Loss: 0.2301
+  Epoch [44/200], Batch [200/517], Loss: 0.1621
+  Epoch [44/200], Batch [300/517], Loss: 0.1754
+  Epoch [44/200], Batch [400/517], Loss: 0.2470
+  Epoch [44/200], Batch [500/517], Loss: 0.2339
+--- Epoch [44/200] complete. Average Training Loss: 0.2346 ---
+--- Time taken for epoch: 314.17 seconds ---
+  Epoch [45/200], Batch [100/517], Loss: 0.1981
+  Epoch [45/200], Batch [200/517], Loss: 0.1719
+  Epoch [45/200], Batch [300/517], Loss: 0.2462
+  Epoch [45/200], Batch [400/517], Loss: 0.2679
+  Epoch [45/200], Batch [500/517], Loss: 0.2626
+--- Epoch [45/200] complete. Average Training Loss: 0.2291 ---
+--- Time taken for epoch: 314.26 seconds ---
+  Epoch [46/200], Batch [100/517], Loss: 0.2828
+  Epoch [46/200], Batch [200/517], Loss: 0.2478
+  Epoch [46/200], Batch [300/517], Loss: 0.1824
+  Epoch [46/200], Batch [400/517], Loss: 0.2032
+  Epoch [46/200], Batch [500/517], Loss: 0.3407
+--- Epoch [46/200] complete. Average Training Loss: 0.2302 ---
+--- Time taken for epoch: 314.55 seconds ---
+  Epoch [47/200], Batch [100/517], Loss: 0.1696
+  Epoch [47/200], Batch [200/517], Loss: 0.1866
+  Epoch [47/200], Batch [300/517], Loss: 0.1899
+  Epoch [47/200], Batch [400/517], Loss: 0.1657
+  Epoch [47/200], Batch [500/517], Loss: 0.2699
+--- Epoch [47/200] complete. Average Training Loss: 0.2288 ---
+--- Time taken for epoch: 314.17 seconds ---
+  Epoch [48/200], Batch [100/517], Loss: 0.2015
+  Epoch [48/200], Batch [200/517], Loss: 0.3893
+  Epoch [48/200], Batch [300/517], Loss: 0.2235
+  Epoch [48/200], Batch [400/517], Loss: 0.2280
+  Epoch [48/200], Batch [500/517], Loss: 0.3172
+--- Epoch [48/200] complete. Average Training Loss: 0.2271 ---
+--- Time taken for epoch: 314.16 seconds ---
+  Epoch [49/200], Batch [100/517], Loss: 0.2233
+  Epoch [49/200], Batch [200/517], Loss: 0.3118
+  Epoch [49/200], Batch [300/517], Loss: 0.2362
+  Epoch [49/200], Batch [400/517], Loss: 0.1943
+  Epoch [49/200], Batch [500/517], Loss: 0.2216
+--- Epoch [49/200] complete. Average Training Loss: 0.2287 ---
+--- Time taken for epoch: 314.41 seconds ---
+  Epoch [50/200], Batch [100/517], Loss: 0.1517
+  Epoch [50/200], Batch [200/517], Loss: 0.1612
+  Epoch [50/200], Batch [300/517], Loss: 0.3034
+  Epoch [50/200], Batch [400/517], Loss: 0.2072
+  Epoch [50/200], Batch [500/517], Loss: 0.3241
+--- Epoch [50/200] complete. Average Training Loss: 0.2268 ---
+--- Time taken for epoch: 314.17 seconds ---
+ -- Updated Checkpoint: Saved model at 50 epochs.
+  Epoch [51/200], Batch [100/517], Loss: 0.2043
+  Epoch [51/200], Batch [200/517], Loss: 0.4305
+  Epoch [51/200], Batch [300/517], Loss: 0.2298
+  Epoch [51/200], Batch [400/517], Loss: 0.2782
+  Epoch [51/200], Batch [500/517], Loss: 0.1246
+--- Epoch [51/200] complete. Average Training Loss: 0.2257 ---
+--- Time taken for epoch: 314.24 seconds ---
+  Epoch [52/200], Batch [100/517], Loss: 0.2998
+  Epoch [52/200], Batch [200/517], Loss: 0.2461
+  Epoch [52/200], Batch [300/517], Loss: 0.2556
+  Epoch [52/200], Batch [400/517], Loss: 0.2176
+  Epoch [52/200], Batch [500/517], Loss: 0.2651
+--- Epoch [52/200] complete. Average Training Loss: 0.2229 ---
+--- Time taken for epoch: 314.16 seconds ---
+  Epoch [53/200], Batch [100/517], Loss: 0.2112
+  Epoch [53/200], Batch [200/517], Loss: 0.1763
+  Epoch [53/200], Batch [300/517], Loss: 0.2771
+  Epoch [53/200], Batch [400/517], Loss: 0.1641
+  Epoch [53/200], Batch [500/517], Loss: 0.1503
+--- Epoch [53/200] complete. Average Training Loss: 0.2243 ---
+--- Time taken for epoch: 314.13 seconds ---
+  Epoch [54/200], Batch [100/517], Loss: 0.2017
+  Epoch [54/200], Batch [200/517], Loss: 0.1957
+  Epoch [54/200], Batch [300/517], Loss: 0.2584
+  Epoch [54/200], Batch [400/517], Loss: 0.2086
+  Epoch [54/200], Batch [500/517], Loss: 0.1965
+--- Epoch [54/200] complete. Average Training Loss: 0.2163 ---
+--- Time taken for epoch: 314.29 seconds ---
+  Epoch [55/200], Batch [100/517], Loss: 0.1944
+  Epoch [55/200], Batch [200/517], Loss: 0.1610
+  Epoch [55/200], Batch [300/517], Loss: 0.2193
+  Epoch [55/200], Batch [400/517], Loss: 0.2138
+  Epoch [55/200], Batch [500/517], Loss: 0.2352
+--- Epoch [55/200] complete. Average Training Loss: 0.2206 ---
+--- Time taken for epoch: 314.20 seconds ---
+  Epoch [56/200], Batch [100/517], Loss: 0.2618
+  Epoch [56/200], Batch [200/517], Loss: 0.1444
+  Epoch [56/200], Batch [300/517], Loss: 0.2588
+  Epoch [56/200], Batch [400/517], Loss: 0.4173
+  Epoch [56/200], Batch [500/517], Loss: 0.2797
+--- Epoch [56/200] complete. Average Training Loss: 0.2131 ---
+--- Time taken for epoch: 314.77 seconds ---
+  Epoch [57/200], Batch [100/517], Loss: 0.2446
+  Epoch [57/200], Batch [200/517], Loss: 0.3402
+  Epoch [57/200], Batch [300/517], Loss: 0.2304
+  Epoch [57/200], Batch [400/517], Loss: 0.1279
+  Epoch [57/200], Batch [500/517], Loss: 0.3059
+--- Epoch [57/200] complete. Average Training Loss: 0.2144 ---
+--- Time taken for epoch: 314.65 seconds ---
+  Epoch [58/200], Batch [100/517], Loss: 0.2342
+  Epoch [58/200], Batch [200/517], Loss: 0.1718
+  Epoch [58/200], Batch [300/517], Loss: 0.3805
+  Epoch [58/200], Batch [400/517], Loss: 0.2998
+  Epoch [58/200], Batch [500/517], Loss: 0.2483
+--- Epoch [58/200] complete. Average Training Loss: 0.2177 ---
+--- Time taken for epoch: 314.27 seconds ---
+  Epoch [59/200], Batch [100/517], Loss: 0.1828
+  Epoch [59/200], Batch [200/517], Loss: 0.1508
+  Epoch [59/200], Batch [300/517], Loss: 0.1408
+  Epoch [59/200], Batch [400/517], Loss: 0.2480
+  Epoch [59/200], Batch [500/517], Loss: 0.2360
+--- Epoch [59/200] complete. Average Training Loss: 0.2153 ---
+--- Time taken for epoch: 314.35 seconds ---
+  Epoch [60/200], Batch [100/517], Loss: 0.1495
+  Epoch [60/200], Batch [200/517], Loss: 0.1996
+  Epoch [60/200], Batch [300/517], Loss: 0.1527
+  Epoch [60/200], Batch [400/517], Loss: 0.2511
+  Epoch [60/200], Batch [500/517], Loss: 0.1474
+--- Epoch [60/200] complete. Average Training Loss: 0.2176 ---
+--- Time taken for epoch: 314.29 seconds ---
+  Epoch [61/200], Batch [100/517], Loss: 0.1934
+  Epoch [61/200], Batch [200/517], Loss: 0.2621
+  Epoch [61/200], Batch [300/517], Loss: 0.2141
+  Epoch [61/200], Batch [400/517], Loss: 0.2058
+  Epoch [61/200], Batch [500/517], Loss: 0.1657
+--- Epoch [61/200] complete. Average Training Loss: 0.2143 ---
+--- Time taken for epoch: 314.22 seconds ---
+  Epoch [62/200], Batch [100/517], Loss: 0.1537
+  Epoch [62/200], Batch [200/517], Loss: 0.1972
+  Epoch [62/200], Batch [300/517], Loss: 0.2179
+  Epoch [62/200], Batch [400/517], Loss: 0.1804
+  Epoch [62/200], Batch [500/517], Loss: 0.2062
+--- Epoch [62/200] complete. Average Training Loss: 0.2098 ---
+--- Time taken for epoch: 314.23 seconds ---
+  Epoch [63/200], Batch [100/517], Loss: 0.1827
+  Epoch [63/200], Batch [200/517], Loss: 0.1598
+  Epoch [63/200], Batch [300/517], Loss: 0.2529
+  Epoch [63/200], Batch [400/517], Loss: 0.1365
+  Epoch [63/200], Batch [500/517], Loss: 0.3706
+--- Epoch [63/200] complete. Average Training Loss: 0.2138 ---
+--- Time taken for epoch: 314.26 seconds ---
+  Epoch [64/200], Batch [100/517], Loss: 0.2022
+  Epoch [64/200], Batch [200/517], Loss: 0.2211
+  Epoch [64/200], Batch [300/517], Loss: 0.1471
+  Epoch [64/200], Batch [400/517], Loss: 0.1784
+  Epoch [64/200], Batch [500/517], Loss: 0.1627
+--- Epoch [64/200] complete. Average Training Loss: 0.2084 ---
+--- Time taken for epoch: 314.24 seconds ---
+  Epoch [65/200], Batch [100/517], Loss: 0.2821
+  Epoch [65/200], Batch [200/517], Loss: 0.1944
+  Epoch [65/200], Batch [300/517], Loss: 0.1839
+  Epoch [65/200], Batch [400/517], Loss: 0.2077
+  Epoch [65/200], Batch [500/517], Loss: 0.1044
+--- Epoch [65/200] complete. Average Training Loss: 0.2080 ---
+--- Time taken for epoch: 314.25 seconds ---
+  Epoch [66/200], Batch [100/517], Loss: 0.2185
+  Epoch [66/200], Batch [200/517], Loss: 0.2648
+  Epoch [66/200], Batch [300/517], Loss: 0.1741
+  Epoch [66/200], Batch [400/517], Loss: 0.1382
+  Epoch [66/200], Batch [500/517], Loss: 0.1376
+--- Epoch [66/200] complete. Average Training Loss: 0.2034 ---
+--- Time taken for epoch: 314.17 seconds ---
+  Epoch [67/200], Batch [100/517], Loss: 0.1335
+  Epoch [67/200], Batch [200/517], Loss: 0.1271
+  Epoch [67/200], Batch [300/517], Loss: 0.1886
+  Epoch [67/200], Batch [400/517], Loss: 0.1930
+  Epoch [67/200], Batch [500/517], Loss: 0.2385
+--- Epoch [67/200] complete. Average Training Loss: 0.2072 ---
+--- Time taken for epoch: 314.25 seconds ---
+  Epoch [68/200], Batch [100/517], Loss: 0.2364
+  Epoch [68/200], Batch [200/517], Loss: 0.1944
+  Epoch [68/200], Batch [300/517], Loss: 0.2103
+  Epoch [68/200], Batch [400/517], Loss: 0.1651
+  Epoch [68/200], Batch [500/517], Loss: 0.1708
+--- Epoch [68/200] complete. Average Training Loss: 0.2123 ---
+--- Time taken for epoch: 314.22 seconds ---
+  Epoch [69/200], Batch [100/517], Loss: 0.2424
+  Epoch [69/200], Batch [200/517], Loss: 0.1654
+  Epoch [69/200], Batch [300/517], Loss: 0.2392
+  Epoch [69/200], Batch [400/517], Loss: 0.2779
+  Epoch [69/200], Batch [500/517], Loss: 0.1943
+--- Epoch [69/200] complete. Average Training Loss: 0.2068 ---
+--- Time taken for epoch: 314.20 seconds ---
+  Epoch [70/200], Batch [100/517], Loss: 0.1288
+  Epoch [70/200], Batch [200/517], Loss: 0.3375
+  Epoch [70/200], Batch [300/517], Loss: 0.1471
+  Epoch [70/200], Batch [400/517], Loss: 0.2535
+  Epoch [70/200], Batch [500/517], Loss: 0.2090
+--- Epoch [70/200] complete. Average Training Loss: 0.2100 ---
+--- Time taken for epoch: 314.24 seconds ---
+  Epoch [71/200], Batch [100/517], Loss: 0.2705
+  Epoch [71/200], Batch [200/517], Loss: 0.1623
+  Epoch [71/200], Batch [300/517], Loss: 0.2952
+  Epoch [71/200], Batch [400/517], Loss: 0.1682
+  Epoch [71/200], Batch [500/517], Loss: 0.2371
+--- Epoch [71/200] complete. Average Training Loss: 0.2035 ---
+--- Time taken for epoch: 314.21 seconds ---
+  Epoch [72/200], Batch [100/517], Loss: 0.2391
+  Epoch [72/200], Batch [200/517], Loss: 0.1505
+  Epoch [72/200], Batch [300/517], Loss: 0.1634
+  Epoch [72/200], Batch [400/517], Loss: 0.1621
+  Epoch [72/200], Batch [500/517], Loss: 0.3121
+--- Epoch [72/200] complete. Average Training Loss: 0.2011 ---
+--- Time taken for epoch: 314.28 seconds ---
+  Epoch [73/200], Batch [100/517], Loss: 0.1700
+  Epoch [73/200], Batch [200/517], Loss: 0.1885
+  Epoch [73/200], Batch [300/517], Loss: 0.1526
+  Epoch [73/200], Batch [400/517], Loss: 0.1395
+  Epoch [73/200], Batch [500/517], Loss: 0.2183
+--- Epoch [73/200] complete. Average Training Loss: 0.2058 ---
+--- Time taken for epoch: 314.31 seconds ---
+  Epoch [74/200], Batch [100/517], Loss: 0.2220
+  Epoch [74/200], Batch [200/517], Loss: 0.2055
+  Epoch [74/200], Batch [300/517], Loss: 0.2044
+  Epoch [74/200], Batch [400/517], Loss: 0.2190
+  Epoch [74/200], Batch [500/517], Loss: 0.2539
+--- Epoch [74/200] complete. Average Training Loss: 0.1994 ---
+--- Time taken for epoch: 314.34 seconds ---
+  Epoch [75/200], Batch [100/517], Loss: 0.1407
+  Epoch [75/200], Batch [200/517], Loss: 0.1145
+  Epoch [75/200], Batch [300/517], Loss: 0.1989
+  Epoch [75/200], Batch [400/517], Loss: 0.1158
+  Epoch [75/200], Batch [500/517], Loss: 0.1789
+--- Epoch [75/200] complete. Average Training Loss: 0.1956 ---
+--- Time taken for epoch: 314.22 seconds ---
+ -- Updated Checkpoint: Saved model at 75 epochs.
+  Epoch [76/200], Batch [100/517], Loss: 0.2190
+  Epoch [76/200], Batch [200/517], Loss: 0.2295
+  Epoch [76/200], Batch [300/517], Loss: 0.2543
+  Epoch [76/200], Batch [400/517], Loss: 0.1765
+  Epoch [76/200], Batch [500/517], Loss: 0.1701
+--- Epoch [76/200] complete. Average Training Loss: 0.2011 ---
+--- Time taken for epoch: 314.32 seconds ---
+  Epoch [77/200], Batch [100/517], Loss: 0.1373
+  Epoch [77/200], Batch [200/517], Loss: 0.1460
+  Epoch [77/200], Batch [300/517], Loss: 0.2256
+  Epoch [77/200], Batch [400/517], Loss: 0.1298
+  Epoch [77/200], Batch [500/517], Loss: 0.2005
+--- Epoch [77/200] complete. Average Training Loss: 0.2011 ---
+--- Time taken for epoch: 314.34 seconds ---
+  Epoch [78/200], Batch [100/517], Loss: 0.1681
+  Epoch [78/200], Batch [200/517], Loss: 0.2457
+  Epoch [78/200], Batch [300/517], Loss: 0.1551
+  Epoch [78/200], Batch [400/517], Loss: 0.2637
+  Epoch [78/200], Batch [500/517], Loss: 0.1348
+--- Epoch [78/200] complete. Average Training Loss: 0.2094 ---
+--- Time taken for epoch: 314.30 seconds ---
+  Epoch [79/200], Batch [100/517], Loss: 0.2529
+  Epoch [79/200], Batch [200/517], Loss: 0.2154
+  Epoch [79/200], Batch [300/517], Loss: 0.1925
+  Epoch [79/200], Batch [400/517], Loss: 0.1806
+  Epoch [79/200], Batch [500/517], Loss: 0.1454
+--- Epoch [79/200] complete. Average Training Loss: 0.1929 ---
+--- Time taken for epoch: 314.29 seconds ---
+  Epoch [80/200], Batch [100/517], Loss: 0.1927
+  Epoch [80/200], Batch [200/517], Loss: 0.1660
+  Epoch [80/200], Batch [300/517], Loss: 0.2913
+  Epoch [80/200], Batch [400/517], Loss: 0.1901
+  Epoch [80/200], Batch [500/517], Loss: 0.1703
+--- Epoch [80/200] complete. Average Training Loss: 0.1977 ---
+--- Time taken for epoch: 314.22 seconds ---
+  Epoch [81/200], Batch [100/517], Loss: 0.1463
+  Epoch [81/200], Batch [200/517], Loss: 0.1896
+  Epoch [81/200], Batch [300/517], Loss: 0.2191
+  Epoch [81/200], Batch [400/517], Loss: 0.1464
+  Epoch [81/200], Batch [500/517], Loss: 0.1655
+--- Epoch [81/200] complete. Average Training Loss: 0.2024 ---
+--- Time taken for epoch: 314.40 seconds ---
+  Epoch [82/200], Batch [100/517], Loss: 0.1777
+  Epoch [82/200], Batch [200/517], Loss: 0.1849
+  Epoch [82/200], Batch [300/517], Loss: 0.1496
+  Epoch [82/200], Batch [400/517], Loss: 0.1579
+  Epoch [82/200], Batch [500/517], Loss: 0.2070
+--- Epoch [82/200] complete. Average Training Loss: 0.1920 ---
+--- Time taken for epoch: 314.17 seconds ---
+  Epoch [83/200], Batch [100/517], Loss: 0.2219
+  Epoch [83/200], Batch [200/517], Loss: 0.2421
+  Epoch [83/200], Batch [300/517], Loss: 0.2060
+  Epoch [83/200], Batch [400/517], Loss: 0.2158
+  Epoch [83/200], Batch [500/517], Loss: 0.1404
+--- Epoch [83/200] complete. Average Training Loss: 0.1923 ---
+--- Time taken for epoch: 314.19 seconds ---
+  Epoch [84/200], Batch [100/517], Loss: 0.1663
+  Epoch [84/200], Batch [200/517], Loss: 0.2271
+  Epoch [84/200], Batch [300/517], Loss: 0.1751
+  Epoch [84/200], Batch [400/517], Loss: 0.1586
+  Epoch [84/200], Batch [500/517], Loss: 0.2312
+--- Epoch [84/200] complete. Average Training Loss: 0.1950 ---
+--- Time taken for epoch: 314.37 seconds ---
+  Epoch [85/200], Batch [100/517], Loss: 0.1588
+  Epoch [85/200], Batch [200/517], Loss: 0.2077
+  Epoch [85/200], Batch [300/517], Loss: 0.1158
+  Epoch [85/200], Batch [400/517], Loss: 0.2554
+  Epoch [85/200], Batch [500/517], Loss: 0.1344
+--- Epoch [85/200] complete. Average Training Loss: 0.1988 ---
+--- Time taken for epoch: 314.27 seconds ---
+  Epoch [86/200], Batch [100/517], Loss: 0.1988
+  Epoch [86/200], Batch [200/517], Loss: 0.1720
+  Epoch [86/200], Batch [300/517], Loss: 0.1626
+  Epoch [86/200], Batch [400/517], Loss: 0.2156
+  Epoch [86/200], Batch [500/517], Loss: 0.2217
+--- Epoch [86/200] complete. Average Training Loss: 0.1880 ---
+--- Time taken for epoch: 314.44 seconds ---
+  Epoch [87/200], Batch [100/517], Loss: 0.2275
+  Epoch [87/200], Batch [200/517], Loss: 0.1806
+  Epoch [87/200], Batch [300/517], Loss: 0.2610
+  Epoch [87/200], Batch [400/517], Loss: 0.2539
+  Epoch [87/200], Batch [500/517], Loss: 0.1680
+--- Epoch [87/200] complete. Average Training Loss: 0.1906 ---
+--- Time taken for epoch: 314.48 seconds ---
+  Epoch [88/200], Batch [100/517], Loss: 0.2244
+  Epoch [88/200], Batch [200/517], Loss: 0.2898
+  Epoch [88/200], Batch [300/517], Loss: 0.2027
+  Epoch [88/200], Batch [400/517], Loss: 0.1362
+  Epoch [88/200], Batch [500/517], Loss: 0.1732
+--- Epoch [88/200] complete. Average Training Loss: 0.1942 ---
+--- Time taken for epoch: 314.55 seconds ---
+  Epoch [89/200], Batch [100/517], Loss: 0.1595
+  Epoch [89/200], Batch [200/517], Loss: 0.2237
+  Epoch [89/200], Batch [300/517], Loss: 0.2000
+  Epoch [89/200], Batch [400/517], Loss: 0.1535
+  Epoch [89/200], Batch [500/517], Loss: 0.1608
+--- Epoch [89/200] complete. Average Training Loss: 0.1910 ---
+--- Time taken for epoch: 314.21 seconds ---
+  Epoch [90/200], Batch [100/517], Loss: 0.1569
+  Epoch [90/200], Batch [200/517], Loss: 0.1940
+  Epoch [90/200], Batch [300/517], Loss: 0.1623
+  Epoch [90/200], Batch [400/517], Loss: 0.2586
+  Epoch [90/200], Batch [500/517], Loss: 0.2191
+--- Epoch [90/200] complete. Average Training Loss: 0.1919 ---
+--- Time taken for epoch: 314.44 seconds ---
+  Epoch [91/200], Batch [100/517], Loss: 0.1520
+  Epoch [91/200], Batch [200/517], Loss: 0.1443
+  Epoch [91/200], Batch [300/517], Loss: 0.1681
+  Epoch [91/200], Batch [400/517], Loss: 0.1613
+  Epoch [91/200], Batch [500/517], Loss: 0.1983
+--- Epoch [91/200] complete. Average Training Loss: 0.1983 ---
+--- Time taken for epoch: 314.25 seconds ---
+  Epoch [92/200], Batch [100/517], Loss: 0.1382
+  Epoch [92/200], Batch [200/517], Loss: 0.1533
+  Epoch [92/200], Batch [300/517], Loss: 0.1653
+  Epoch [92/200], Batch [400/517], Loss: 0.1945
+  Epoch [92/200], Batch [500/517], Loss: 0.1462
+--- Epoch [92/200] complete. Average Training Loss: 0.1904 ---
+--- Time taken for epoch: 314.31 seconds ---
+  Epoch [93/200], Batch [100/517], Loss: 0.1715
+  Epoch [93/200], Batch [200/517], Loss: 0.2086
+  Epoch [93/200], Batch [300/517], Loss: 0.2723
+  Epoch [93/200], Batch [400/517], Loss: 0.3124
+  Epoch [93/200], Batch [500/517], Loss: 0.1422
+--- Epoch [93/200] complete. Average Training Loss: 0.1917 ---
+--- Time taken for epoch: 314.42 seconds ---
+  Epoch [94/200], Batch [100/517], Loss: 0.3589
+  Epoch [94/200], Batch [200/517], Loss: 0.2290
+  Epoch [94/200], Batch [300/517], Loss: 0.1371
+  Epoch [94/200], Batch [400/517], Loss: 0.1859
+  Epoch [94/200], Batch [500/517], Loss: 0.2750
+--- Epoch [94/200] complete. Average Training Loss: 0.1901 ---
+--- Time taken for epoch: 314.41 seconds ---
+  Epoch [95/200], Batch [100/517], Loss: 0.1785
+  Epoch [95/200], Batch [200/517], Loss: 0.1727
+  Epoch [95/200], Batch [300/517], Loss: 0.1792
+  Epoch [95/200], Batch [400/517], Loss: 0.1657
+  Epoch [95/200], Batch [500/517], Loss: 0.2192
+--- Epoch [95/200] complete. Average Training Loss: 0.1874 ---
+--- Time taken for epoch: 314.30 seconds ---
+  Epoch [96/200], Batch [100/517], Loss: 0.1898
+  Epoch [96/200], Batch [200/517], Loss: 0.1542
+  Epoch [96/200], Batch [300/517], Loss: 0.1302
+  Epoch [96/200], Batch [400/517], Loss: 0.2189
+  Epoch [96/200], Batch [500/517], Loss: 0.2186
+--- Epoch [96/200] complete. Average Training Loss: 0.1896 ---
+--- Time taken for epoch: 314.20 seconds ---
+  Epoch [97/200], Batch [100/517], Loss: 0.2378
+  Epoch [97/200], Batch [200/517], Loss: 0.1710
+  Epoch [97/200], Batch [300/517], Loss: 0.2233
+  Epoch [97/200], Batch [400/517], Loss: 0.2479
+  Epoch [97/200], Batch [500/517], Loss: 0.1833
+--- Epoch [97/200] complete. Average Training Loss: 0.1867 ---
+--- Time taken for epoch: 314.24 seconds ---
+  Epoch [98/200], Batch [100/517], Loss: 0.1088
+  Epoch [98/200], Batch [200/517], Loss: 0.1704
+  Epoch [98/200], Batch [300/517], Loss: 0.1410
+  Epoch [98/200], Batch [400/517], Loss: 0.1664
+  Epoch [98/200], Batch [500/517], Loss: 0.2717
+--- Epoch [98/200] complete. Average Training Loss: 0.1934 ---
+--- Time taken for epoch: 314.34 seconds ---
+  Epoch [99/200], Batch [100/517], Loss: 0.1624
+  Epoch [99/200], Batch [200/517], Loss: 0.1837
+  Epoch [99/200], Batch [300/517], Loss: 0.1625
+  Epoch [99/200], Batch [400/517], Loss: 0.1475
+  Epoch [99/200], Batch [500/517], Loss: 0.2054
+--- Epoch [99/200] complete. Average Training Loss: 0.1888 ---
+--- Time taken for epoch: 314.57 seconds ---
+  Epoch [100/200], Batch [100/517], Loss: 0.1619
+  Epoch [100/200], Batch [200/517], Loss: 0.1529
+  Epoch [100/200], Batch [300/517], Loss: 0.1714
+  Epoch [100/200], Batch [400/517], Loss: 0.1983
+  Epoch [100/200], Batch [500/517], Loss: 0.1963
+--- Epoch [100/200] complete. Average Training Loss: 0.1821 ---
+--- Time taken for epoch: 314.21 seconds ---
+ -- Updated Checkpoint: Saved model at 100 epochs.
+  Epoch [101/200], Batch [100/517], Loss: 0.1708
+  Epoch [101/200], Batch [200/517], Loss: 0.1128
+  Epoch [101/200], Batch [300/517], Loss: 0.1481
+  Epoch [101/200], Batch [400/517], Loss: 0.1798
+  Epoch [101/200], Batch [500/517], Loss: 0.1993
+--- Epoch [101/200] complete. Average Training Loss: 0.1811 ---
+--- Time taken for epoch: 314.37 seconds ---
+  Epoch [102/200], Batch [100/517], Loss: 0.2716
+  Epoch [102/200], Batch [200/517], Loss: 0.1383
+  Epoch [102/200], Batch [300/517], Loss: 0.2344
+  Epoch [102/200], Batch [400/517], Loss: 0.1161
+  Epoch [102/200], Batch [500/517], Loss: 0.1294
+--- Epoch [102/200] complete. Average Training Loss: 0.1830 ---
+--- Time taken for epoch: 314.33 seconds ---
+  Epoch [103/200], Batch [100/517], Loss: 0.1283
+  Epoch [103/200], Batch [200/517], Loss: 0.1339
+  Epoch [103/200], Batch [300/517], Loss: 0.1948
+  Epoch [103/200], Batch [400/517], Loss: 0.2668
+  Epoch [103/200], Batch [500/517], Loss: 0.2410
+--- Epoch [103/200] complete. Average Training Loss: 0.1845 ---
+--- Time taken for epoch: 314.39 seconds ---
+  Epoch [104/200], Batch [100/517], Loss: 0.1535
+  Epoch [104/200], Batch [200/517], Loss: 0.1796
+  Epoch [104/200], Batch [300/517], Loss: 0.1379
+  Epoch [104/200], Batch [400/517], Loss: 0.2022
+  Epoch [104/200], Batch [500/517], Loss: 0.2513
+--- Epoch [104/200] complete. Average Training Loss: 0.1825 ---
+--- Time taken for epoch: 314.31 seconds ---
+  Epoch [105/200], Batch [100/517], Loss: 0.1594
+  Epoch [105/200], Batch [200/517], Loss: 0.1587
+  Epoch [105/200], Batch [300/517], Loss: 0.1154
+  Epoch [105/200], Batch [400/517], Loss: 0.1185
+  Epoch [105/200], Batch [500/517], Loss: 0.1313
+--- Epoch [105/200] complete. Average Training Loss: 0.1818 ---
+--- Time taken for epoch: 314.16 seconds ---
+  Epoch [106/200], Batch [100/517], Loss: 0.2209
+  Epoch [106/200], Batch [200/517], Loss: 0.1166
+  Epoch [106/200], Batch [300/517], Loss: 0.1338
+  Epoch [106/200], Batch [400/517], Loss: 0.1810
+  Epoch [106/200], Batch [500/517], Loss: 0.1566
+--- Epoch [106/200] complete. Average Training Loss: 0.1820 ---
+--- Time taken for epoch: 314.34 seconds ---
+  Epoch [107/200], Batch [100/517], Loss: 0.1290
+  Epoch [107/200], Batch [200/517], Loss: 0.1721
+  Epoch [107/200], Batch [300/517], Loss: 0.1360
+  Epoch [107/200], Batch [400/517], Loss: 0.2720
+  Epoch [107/200], Batch [500/517], Loss: 0.2061
+--- Epoch [107/200] complete. Average Training Loss: 0.1838 ---
+--- Time taken for epoch: 314.28 seconds ---
+  Epoch [108/200], Batch [100/517], Loss: 0.2825
+  Epoch [108/200], Batch [200/517], Loss: 0.1465
+  Epoch [108/200], Batch [300/517], Loss: 0.1818
+  Epoch [108/200], Batch [400/517], Loss: 0.1991
+  Epoch [108/200], Batch [500/517], Loss: 0.1635
+--- Epoch [108/200] complete. Average Training Loss: 0.1821 ---
+--- Time taken for epoch: 314.38 seconds ---
+  Epoch [109/200], Batch [100/517], Loss: 0.1947
+  Epoch [109/200], Batch [200/517], Loss: 0.2288
+  Epoch [109/200], Batch [300/517], Loss: 0.1224
+  Epoch [109/200], Batch [400/517], Loss: 0.1826
+  Epoch [109/200], Batch [500/517], Loss: 0.1917
+--- Epoch [109/200] complete. Average Training Loss: 0.1871 ---
+--- Time taken for epoch: 314.34 seconds ---
+  Epoch [110/200], Batch [100/517], Loss: 0.1159
+  Epoch [110/200], Batch [200/517], Loss: 0.1141
+  Epoch [110/200], Batch [300/517], Loss: 0.1469
+  Epoch [110/200], Batch [400/517], Loss: 0.1512
+  Epoch [110/200], Batch [500/517], Loss: 0.1525
+--- Epoch [110/200] complete. Average Training Loss: 0.1787 ---
+--- Time taken for epoch: 314.29 seconds ---
+  Epoch [111/200], Batch [100/517], Loss: 0.3886
+  Epoch [111/200], Batch [200/517], Loss: 0.2192
+  Epoch [111/200], Batch [300/517], Loss: 0.2059
+  Epoch [111/200], Batch [400/517], Loss: 0.2097
+  Epoch [111/200], Batch [500/517], Loss: 0.1337
+--- Epoch [111/200] complete. Average Training Loss: 0.1809 ---
+--- Time taken for epoch: 314.26 seconds ---
+  Epoch [112/200], Batch [100/517], Loss: 0.1307
+  Epoch [112/200], Batch [200/517], Loss: 0.1386
+  Epoch [112/200], Batch [300/517], Loss: 0.2190
+  Epoch [112/200], Batch [400/517], Loss: 0.1183
+  Epoch [112/200], Batch [500/517], Loss: 0.2853
+--- Epoch [112/200] complete. Average Training Loss: 0.1841 ---
+--- Time taken for epoch: 314.30 seconds ---
+  Epoch [113/200], Batch [100/517], Loss: 0.2485
+  Epoch [113/200], Batch [200/517], Loss: 0.3174
+  Epoch [113/200], Batch [300/517], Loss: 0.1863
+  Epoch [113/200], Batch [400/517], Loss: 0.1673
+  Epoch [113/200], Batch [500/517], Loss: 0.1233
+--- Epoch [113/200] complete. Average Training Loss: 0.1824 ---
+--- Time taken for epoch: 314.23 seconds ---
+  Epoch [114/200], Batch [100/517], Loss: 0.1684
+  Epoch [114/200], Batch [200/517], Loss: 0.1836
+  Epoch [114/200], Batch [300/517], Loss: 0.1875
+  Epoch [114/200], Batch [400/517], Loss: 0.1573
+  Epoch [114/200], Batch [500/517], Loss: 0.1632
+--- Epoch [114/200] complete. Average Training Loss: 0.1803 ---
+--- Time taken for epoch: 314.30 seconds ---
+  Epoch [115/200], Batch [100/517], Loss: 0.1685
+  Epoch [115/200], Batch [200/517], Loss: 0.2905
+  Epoch [115/200], Batch [300/517], Loss: 0.1400
+  Epoch [115/200], Batch [400/517], Loss: 0.2029
+  Epoch [115/200], Batch [500/517], Loss: 0.1548
+--- Epoch [115/200] complete. Average Training Loss: 0.1852 ---
+--- Time taken for epoch: 314.26 seconds ---
+  Epoch [116/200], Batch [100/517], Loss: 0.1360
+  Epoch [116/200], Batch [200/517], Loss: 0.2296
+  Epoch [116/200], Batch [300/517], Loss: 0.1691
+  Epoch [116/200], Batch [400/517], Loss: 0.1968
+  Epoch [116/200], Batch [500/517], Loss: 0.1661
+--- Epoch [116/200] complete. Average Training Loss: 0.1768 ---
+--- Time taken for epoch: 314.19 seconds ---
+  Epoch [117/200], Batch [100/517], Loss: 0.1383
+  Epoch [117/200], Batch [200/517], Loss: 0.4042
+  Epoch [117/200], Batch [300/517], Loss: 0.1724
+  Epoch [117/200], Batch [400/517], Loss: 0.2205
+  Epoch [117/200], Batch [500/517], Loss: 0.1460
+--- Epoch [117/200] complete. Average Training Loss: 0.1784 ---
+--- Time taken for epoch: 314.23 seconds ---
+  Epoch [118/200], Batch [100/517], Loss: 0.1702
+  Epoch [118/200], Batch [200/517], Loss: 0.2195
+  Epoch [118/200], Batch [300/517], Loss: 0.1354
+  Epoch [118/200], Batch [400/517], Loss: 0.1449
+  Epoch [118/200], Batch [500/517], Loss: 0.1667
+--- Epoch [118/200] complete. Average Training Loss: 0.1779 ---
+--- Time taken for epoch: 314.25 seconds ---
+  Epoch [119/200], Batch [100/517], Loss: 0.1173
+  Epoch [119/200], Batch [200/517], Loss: 0.1533
+  Epoch [119/200], Batch [300/517], Loss: 0.1689
+  Epoch [119/200], Batch [400/517], Loss: 0.1499
+  Epoch [119/200], Batch [500/517], Loss: 0.1667
+--- Epoch [119/200] complete. Average Training Loss: 0.1756 ---
+--- Time taken for epoch: 314.17 seconds ---
+  Epoch [120/200], Batch [100/517], Loss: 0.1674
+  Epoch [120/200], Batch [200/517], Loss: 0.1572
+  Epoch [120/200], Batch [300/517], Loss: 0.2237
+  Epoch [120/200], Batch [400/517], Loss: 0.1230
+  Epoch [120/200], Batch [500/517], Loss: 0.2558
+--- Epoch [120/200] complete. Average Training Loss: 0.1731 ---
+--- Time taken for epoch: 314.28 seconds ---
+  Epoch [121/200], Batch [100/517], Loss: 0.2347
+  Epoch [121/200], Batch [200/517], Loss: 0.1623
+  Epoch [121/200], Batch [300/517], Loss: 0.1515
+  Epoch [121/200], Batch [400/517], Loss: 0.2197
+  Epoch [121/200], Batch [500/517], Loss: 0.1688
+--- Epoch [121/200] complete. Average Training Loss: 0.1742 ---
+--- Time taken for epoch: 314.24 seconds ---
+  Epoch [122/200], Batch [100/517], Loss: 0.2284
+  Epoch [122/200], Batch [200/517], Loss: 0.1905
+  Epoch [122/200], Batch [300/517], Loss: 0.1818
+  Epoch [122/200], Batch [400/517], Loss: 0.2507
+  Epoch [122/200], Batch [500/517], Loss: 0.1443
+--- Epoch [122/200] complete. Average Training Loss: 0.1734 ---
+--- Time taken for epoch: 314.29 seconds ---
+  Epoch [123/200], Batch [100/517], Loss: 0.2283
+  Epoch [123/200], Batch [200/517], Loss: 0.1648
+  Epoch [123/200], Batch [300/517], Loss: 0.2270
+  Epoch [123/200], Batch [400/517], Loss: 0.2914
+  Epoch [123/200], Batch [500/517], Loss: 0.1101
+--- Epoch [123/200] complete. Average Training Loss: 0.1934 ---
+--- Time taken for epoch: 314.26 seconds ---
+  Epoch [124/200], Batch [100/517], Loss: 0.1715
+  Epoch [124/200], Batch [200/517], Loss: 0.1599
+  Epoch [124/200], Batch [300/517], Loss: 0.4011
+  Epoch [124/200], Batch [400/517], Loss: 0.1732
+  Epoch [124/200], Batch [500/517], Loss: 0.1831
+--- Epoch [124/200] complete. Average Training Loss: 0.1745 ---
+--- Time taken for epoch: 314.29 seconds ---
+  Epoch [125/200], Batch [100/517], Loss: 0.1400
+  Epoch [125/200], Batch [200/517], Loss: 0.1282
+  Epoch [125/200], Batch [300/517], Loss: 0.1615
+  Epoch [125/200], Batch [400/517], Loss: 0.2497
+  Epoch [125/200], Batch [500/517], Loss: 0.2288
+--- Epoch [125/200] complete. Average Training Loss: 0.1741 ---
+--- Time taken for epoch: 314.35 seconds ---
+ -- Updated Checkpoint: Saved model at 125 epochs.
+  Epoch [126/200], Batch [100/517], Loss: 0.1972
+  Epoch [126/200], Batch [200/517], Loss: 0.1708
+  Epoch [126/200], Batch [300/517], Loss: 0.1551
+  Epoch [126/200], Batch [400/517], Loss: 0.2449
+  Epoch [126/200], Batch [500/517], Loss: 0.2031
+--- Epoch [126/200] complete. Average Training Loss: 0.1799 ---
+--- Time taken for epoch: 314.27 seconds ---
+  Epoch [127/200], Batch [100/517], Loss: 0.2783
+  Epoch [127/200], Batch [200/517], Loss: 0.1703
+  Epoch [127/200], Batch [300/517], Loss: 0.1734
+  Epoch [127/200], Batch [400/517], Loss: 0.1534
+  Epoch [127/200], Batch [500/517], Loss: 0.1534
+--- Epoch [127/200] complete. Average Training Loss: 0.1709 ---
+--- Time taken for epoch: 314.74 seconds ---
+  Epoch [128/200], Batch [100/517], Loss: 0.2077
+  Epoch [128/200], Batch [200/517], Loss: 0.2745
+  Epoch [128/200], Batch [300/517], Loss: 0.1491
+  Epoch [128/200], Batch [400/517], Loss: 0.1866
+  Epoch [128/200], Batch [500/517], Loss: 0.1064
+--- Epoch [128/200] complete. Average Training Loss: 0.1716 ---
+--- Time taken for epoch: 314.89 seconds ---
+  Epoch [129/200], Batch [100/517], Loss: 0.1779
+  Epoch [129/200], Batch [200/517], Loss: 0.1559
+  Epoch [129/200], Batch [300/517], Loss: 0.1588
+  Epoch [129/200], Batch [400/517], Loss: 0.2293
+  Epoch [129/200], Batch [500/517], Loss: 0.1950
+--- Epoch [129/200] complete. Average Training Loss: 0.1701 ---
+--- Time taken for epoch: 315.01 seconds ---
+  Epoch [130/200], Batch [100/517], Loss: 0.1102
+  Epoch [130/200], Batch [200/517], Loss: 0.1425
+  Epoch [130/200], Batch [300/517], Loss: 0.2909
+  Epoch [130/200], Batch [400/517], Loss: 0.1849
+  Epoch [130/200], Batch [500/517], Loss: 0.1754
+--- Epoch [130/200] complete. Average Training Loss: 0.1674 ---
+--- Time taken for epoch: 314.95 seconds ---
+  Epoch [131/200], Batch [100/517], Loss: 0.1657
+  Epoch [131/200], Batch [200/517], Loss: 0.1501
+  Epoch [131/200], Batch [300/517], Loss: 0.1845
+  Epoch [131/200], Batch [400/517], Loss: 0.1618
+  Epoch [131/200], Batch [500/517], Loss: 0.1187
+--- Epoch [131/200] complete. Average Training Loss: 0.1718 ---
+--- Time taken for epoch: 315.10 seconds ---
+  Epoch [132/200], Batch [100/517], Loss: 0.1796
+  Epoch [132/200], Batch [200/517], Loss: 0.1938
+  Epoch [132/200], Batch [300/517], Loss: 0.1483
+  Epoch [132/200], Batch [400/517], Loss: 0.4019
+  Epoch [132/200], Batch [500/517], Loss: 0.2220
+--- Epoch [132/200] complete. Average Training Loss: 0.1710 ---
+--- Time taken for epoch: 315.04 seconds ---
+  Epoch [133/200], Batch [100/517], Loss: 0.1211
+  Epoch [133/200], Batch [200/517], Loss: 0.1884
+  Epoch [133/200], Batch [300/517], Loss: 0.2311
+  Epoch [133/200], Batch [400/517], Loss: 0.1826
+  Epoch [133/200], Batch [500/517], Loss: 0.1950
+--- Epoch [133/200] complete. Average Training Loss: 0.1704 ---
+--- Time taken for epoch: 315.15 seconds ---
+  Epoch [134/200], Batch [100/517], Loss: 0.1338
+  Epoch [134/200], Batch [200/517], Loss: 0.1844
+  Epoch [134/200], Batch [300/517], Loss: 0.2238
+  Epoch [134/200], Batch [400/517], Loss: 0.2212
+  Epoch [134/200], Batch [500/517], Loss: 0.2805
+--- Epoch [134/200] complete. Average Training Loss: 0.1789 ---
+--- Time taken for epoch: 315.10 seconds ---
+  Epoch [135/200], Batch [100/517], Loss: 0.2239
+  Epoch [135/200], Batch [200/517], Loss: 0.1834
+  Epoch [135/200], Batch [300/517], Loss: 0.1766
+  Epoch [135/200], Batch [400/517], Loss: 0.1530
+  Epoch [135/200], Batch [500/517], Loss: 0.1635
+--- Epoch [135/200] complete. Average Training Loss: 0.1698 ---
+--- Time taken for epoch: 314.84 seconds ---
+  Epoch [136/200], Batch [100/517], Loss: 0.2787
+  Epoch [136/200], Batch [200/517], Loss: 0.1728
+  Epoch [136/200], Batch [300/517], Loss: 0.1822
+  Epoch [136/200], Batch [400/517], Loss: 0.1238
+  Epoch [136/200], Batch [500/517], Loss: 0.1132
+--- Epoch [136/200] complete. Average Training Loss: 0.1705 ---
+--- Time taken for epoch: 314.83 seconds ---
+  Epoch [137/200], Batch [100/517], Loss: 0.1126
+  Epoch [137/200], Batch [200/517], Loss: 0.1757
+  Epoch [137/200], Batch [300/517], Loss: 0.1868
+  Epoch [137/200], Batch [400/517], Loss: 0.1593
+  Epoch [137/200], Batch [500/517], Loss: 0.1393
+--- Epoch [137/200] complete. Average Training Loss: 0.1667 ---
+--- Time taken for epoch: 315.00 seconds ---
+  Epoch [138/200], Batch [100/517], Loss: 0.2569
+  Epoch [138/200], Batch [200/517], Loss: 0.2139
+  Epoch [138/200], Batch [300/517], Loss: 0.1363
+  Epoch [138/200], Batch [400/517], Loss: 0.2669
+  Epoch [138/200], Batch [500/517], Loss: 0.1698
+--- Epoch [138/200] complete. Average Training Loss: 0.1676 ---
+--- Time taken for epoch: 315.06 seconds ---
+  Epoch [139/200], Batch [100/517], Loss: 0.2167
+  Epoch [139/200], Batch [200/517], Loss: 0.2041
+  Epoch [139/200], Batch [300/517], Loss: 0.1820
+  Epoch [139/200], Batch [400/517], Loss: 0.1355
+  Epoch [139/200], Batch [500/517], Loss: 0.1837
+--- Epoch [139/200] complete. Average Training Loss: 0.1710 ---
+--- Time taken for epoch: 315.00 seconds ---
+  Epoch [140/200], Batch [100/517], Loss: 0.1944
+  Epoch [140/200], Batch [200/517], Loss: 0.1525
+  Epoch [140/200], Batch [300/517], Loss: 0.1373
+  Epoch [140/200], Batch [400/517], Loss: 0.2063
+  Epoch [140/200], Batch [500/517], Loss: 0.1984
+--- Epoch [140/200] complete. Average Training Loss: 0.1662 ---
+--- Time taken for epoch: 315.01 seconds ---
+  Epoch [141/200], Batch [100/517], Loss: 0.1495
+  Epoch [141/200], Batch [200/517], Loss: 0.1577
+  Epoch [141/200], Batch [300/517], Loss: 0.1417
+  Epoch [141/200], Batch [400/517], Loss: 0.2085
+  Epoch [141/200], Batch [500/517], Loss: 0.1330
+--- Epoch [141/200] complete. Average Training Loss: 0.1776 ---
+--- Time taken for epoch: 315.04 seconds ---
+  Epoch [142/200], Batch [100/517], Loss: 0.1336
+  Epoch [142/200], Batch [200/517], Loss: 0.1623
+  Epoch [142/200], Batch [300/517], Loss: 0.1444
+  Epoch [142/200], Batch [400/517], Loss: 0.1393
+  Epoch [142/200], Batch [500/517], Loss: 0.1373
+--- Epoch [142/200] complete. Average Training Loss: 0.1684 ---
+--- Time taken for epoch: 314.89 seconds ---
+  Epoch [143/200], Batch [100/517], Loss: 0.1882
+  Epoch [143/200], Batch [200/517], Loss: 0.1234
+  Epoch [143/200], Batch [300/517], Loss: 0.2095
+  Epoch [143/200], Batch [400/517], Loss: 0.1073
+  Epoch [143/200], Batch [500/517], Loss: 0.1925
+--- Epoch [143/200] complete. Average Training Loss: 0.1679 ---
+--- Time taken for epoch: 314.67 seconds ---
+  Epoch [144/200], Batch [100/517], Loss: 0.1504
+  Epoch [144/200], Batch [200/517], Loss: 0.1383
+  Epoch [144/200], Batch [300/517], Loss: 0.1458
+  Epoch [144/200], Batch [400/517], Loss: 0.1351
+  Epoch [144/200], Batch [500/517], Loss: 0.1382
+--- Epoch [144/200] complete. Average Training Loss: 0.1624 ---
+--- Time taken for epoch: 314.75 seconds ---
+  Epoch [145/200], Batch [100/517], Loss: 0.1190
+  Epoch [145/200], Batch [200/517], Loss: 0.1706
+  Epoch [145/200], Batch [300/517], Loss: 0.2133
+  Epoch [145/200], Batch [400/517], Loss: 0.1660
+  Epoch [145/200], Batch [500/517], Loss: 0.1258
+--- Epoch [145/200] complete. Average Training Loss: 0.1677 ---
+--- Time taken for epoch: 314.90 seconds ---
+  Epoch [146/200], Batch [100/517], Loss: 0.1579
+  Epoch [146/200], Batch [200/517], Loss: 0.1465
+  Epoch [146/200], Batch [300/517], Loss: 0.1224
+  Epoch [146/200], Batch [400/517], Loss: 0.1836
+  Epoch [146/200], Batch [500/517], Loss: 0.1543
+--- Epoch [146/200] complete. Average Training Loss: 0.1639 ---
+--- Time taken for epoch: 315.05 seconds ---
+  Epoch [147/200], Batch [100/517], Loss: 0.1217
+  Epoch [147/200], Batch [200/517], Loss: 0.1185
+  Epoch [147/200], Batch [300/517], Loss: 0.1317
+  Epoch [147/200], Batch [400/517], Loss: 0.3962
+  Epoch [147/200], Batch [500/517], Loss: 0.1549
+--- Epoch [147/200] complete. Average Training Loss: 0.1661 ---
+--- Time taken for epoch: 314.87 seconds ---
+  Epoch [148/200], Batch [100/517], Loss: 0.2077
+  Epoch [148/200], Batch [200/517], Loss: 0.1390
+  Epoch [148/200], Batch [300/517], Loss: 0.1298
+  Epoch [148/200], Batch [400/517], Loss: 0.1119
+  Epoch [148/200], Batch [500/517], Loss: 0.3937
+--- Epoch [148/200] complete. Average Training Loss: 0.1661 ---
+--- Time taken for epoch: 315.06 seconds ---
+  Epoch [149/200], Batch [100/517], Loss: 0.1498
+  Epoch [149/200], Batch [200/517], Loss: 0.0987
+  Epoch [149/200], Batch [300/517], Loss: 0.3841
+  Epoch [149/200], Batch [400/517], Loss: 0.1537
+  Epoch [149/200], Batch [500/517], Loss: 0.1206
+--- Epoch [149/200] complete. Average Training Loss: 0.1633 ---
+--- Time taken for epoch: 314.83 seconds ---
+  Epoch [150/200], Batch [100/517], Loss: 0.2359
+  Epoch [150/200], Batch [200/517], Loss: 0.1309
+  Epoch [150/200], Batch [300/517], Loss: 0.1281
+  Epoch [150/200], Batch [400/517], Loss: 0.1356
+  Epoch [150/200], Batch [500/517], Loss: 0.1913
+--- Epoch [150/200] complete. Average Training Loss: 0.1613 ---
+--- Time taken for epoch: 314.59 seconds ---
+ -- Updated Checkpoint: Saved model at 150 epochs.
+  Epoch [151/200], Batch [100/517], Loss: 0.1167
+  Epoch [151/200], Batch [200/517], Loss: 0.1871
+  Epoch [151/200], Batch [300/517], Loss: 0.1746
+  Epoch [151/200], Batch [400/517], Loss: 0.1895
+  Epoch [151/200], Batch [500/517], Loss: 0.1338
+--- Epoch [151/200] complete. Average Training Loss: 0.1685 ---
+--- Time taken for epoch: 314.43 seconds ---
+  Epoch [152/200], Batch [100/517], Loss: 0.0816
+  Epoch [152/200], Batch [200/517], Loss: 0.1297
+  Epoch [152/200], Batch [300/517], Loss: 0.1290
+  Epoch [152/200], Batch [400/517], Loss: 0.1207
+  Epoch [152/200], Batch [500/517], Loss: 0.1590
+--- Epoch [152/200] complete. Average Training Loss: 0.1672 ---
+--- Time taken for epoch: 314.67 seconds ---
+  Epoch [153/200], Batch [100/517], Loss: 0.1971
+  Epoch [153/200], Batch [200/517], Loss: 0.3885
+  Epoch [153/200], Batch [300/517], Loss: 0.1903
+  Epoch [153/200], Batch [400/517], Loss: 0.1428
+  Epoch [153/200], Batch [500/517], Loss: 0.1956
+--- Epoch [153/200] complete. Average Training Loss: 0.1628 ---
+--- Time taken for epoch: 314.72 seconds ---
+  Epoch [154/200], Batch [100/517], Loss: 0.1924
+  Epoch [154/200], Batch [200/517], Loss: 0.0978
+  Epoch [154/200], Batch [300/517], Loss: 0.1332
+  Epoch [154/200], Batch [400/517], Loss: 0.1528
+  Epoch [154/200], Batch [500/517], Loss: 0.1307
+--- Epoch [154/200] complete. Average Training Loss: 0.1621 ---
+--- Time taken for epoch: 314.96 seconds ---
+  Epoch [155/200], Batch [100/517], Loss: 0.2016
+  Epoch [155/200], Batch [200/517], Loss: 0.1306
+  Epoch [155/200], Batch [300/517], Loss: 0.1002
+  Epoch [155/200], Batch [400/517], Loss: 0.1946
+  Epoch [155/200], Batch [500/517], Loss: 0.1260
+--- Epoch [155/200] complete. Average Training Loss: 0.1652 ---
+--- Time taken for epoch: 314.99 seconds ---
+  Epoch [156/200], Batch [100/517], Loss: 0.1289
+  Epoch [156/200], Batch [200/517], Loss: 0.2075
+  Epoch [156/200], Batch [300/517], Loss: 0.2263
+  Epoch [156/200], Batch [400/517], Loss: 0.1289
+  Epoch [156/200], Batch [500/517], Loss: 0.1350
+--- Epoch [156/200] complete. Average Training Loss: 0.1605 ---
+--- Time taken for epoch: 315.00 seconds ---
+  Epoch [157/200], Batch [100/517], Loss: 0.1934
+  Epoch [157/200], Batch [200/517], Loss: 0.1077
+  Epoch [157/200], Batch [300/517], Loss: 0.1684
+  Epoch [157/200], Batch [400/517], Loss: 0.1739
+  Epoch [157/200], Batch [500/517], Loss: 0.2441
+--- Epoch [157/200] complete. Average Training Loss: 0.1722 ---
+--- Time taken for epoch: 314.97 seconds ---
+  Epoch [158/200], Batch [100/517], Loss: 0.1493
+  Epoch [158/200], Batch [200/517], Loss: 0.1263
+  Epoch [158/200], Batch [300/517], Loss: 0.1906
+  Epoch [158/200], Batch [400/517], Loss: 0.1224
+  Epoch [158/200], Batch [500/517], Loss: 0.1508
+--- Epoch [158/200] complete. Average Training Loss: 0.1654 ---
+--- Time taken for epoch: 314.95 seconds ---
+  Epoch [159/200], Batch [100/517], Loss: 0.1870
+  Epoch [159/200], Batch [200/517], Loss: 0.1667
+  Epoch [159/200], Batch [300/517], Loss: 0.1577
+  Epoch [159/200], Batch [400/517], Loss: 0.2121
+  Epoch [159/200], Batch [500/517], Loss: 0.2316
+--- Epoch [159/200] complete. Average Training Loss: 0.1616 ---
+--- Time taken for epoch: 314.87 seconds ---
+  Epoch [160/200], Batch [100/517], Loss: 0.1547
+  Epoch [160/200], Batch [200/517], Loss: 0.2320
+  Epoch [160/200], Batch [300/517], Loss: 0.1693
+  Epoch [160/200], Batch [400/517], Loss: 0.1283
+  Epoch [160/200], Batch [500/517], Loss: 0.2810
+--- Epoch [160/200] complete. Average Training Loss: 0.1654 ---
+--- Time taken for epoch: 314.85 seconds ---
+  Epoch [161/200], Batch [100/517], Loss: 0.1444
+  Epoch [161/200], Batch [200/517], Loss: 0.1426
+  Epoch [161/200], Batch [300/517], Loss: 0.2348
+  Epoch [161/200], Batch [400/517], Loss: 0.1781
+  Epoch [161/200], Batch [500/517], Loss: 0.1303
+--- Epoch [161/200] complete. Average Training Loss: 0.1648 ---
+--- Time taken for epoch: 315.04 seconds ---
+  Epoch [162/200], Batch [100/517], Loss: 0.0984
+  Epoch [162/200], Batch [200/517], Loss: 0.1290
+  Epoch [162/200], Batch [300/517], Loss: 0.1560
+  Epoch [162/200], Batch [400/517], Loss: 0.1598
+  Epoch [162/200], Batch [500/517], Loss: 0.0972
+--- Epoch [162/200] complete. Average Training Loss: 0.1598 ---
+--- Time taken for epoch: 314.92 seconds ---
+  Epoch [163/200], Batch [100/517], Loss: 0.1593
+  Epoch [163/200], Batch [200/517], Loss: 0.2548
+  Epoch [163/200], Batch [300/517], Loss: 0.0984
+  Epoch [163/200], Batch [400/517], Loss: 0.1535
+  Epoch [163/200], Batch [500/517], Loss: 0.1397
+--- Epoch [163/200] complete. Average Training Loss: 0.1616 ---
+--- Time taken for epoch: 314.93 seconds ---
+  Epoch [164/200], Batch [100/517], Loss: 0.1530
+  Epoch [164/200], Batch [200/517], Loss: 0.1576
+  Epoch [164/200], Batch [300/517], Loss: 0.1657
+  Epoch [164/200], Batch [400/517], Loss: 0.1196
+  Epoch [164/200], Batch [500/517], Loss: 0.1391
+--- Epoch [164/200] complete. Average Training Loss: 0.1616 ---
+--- Time taken for epoch: 314.91 seconds ---
+  Epoch [165/200], Batch [100/517], Loss: 0.1537
+  Epoch [165/200], Batch [200/517], Loss: 0.1026
+  Epoch [165/200], Batch [300/517], Loss: 0.1178
+  Epoch [165/200], Batch [400/517], Loss: 0.1788
+  Epoch [165/200], Batch [500/517], Loss: 0.1490
+--- Epoch [165/200] complete. Average Training Loss: 0.1582 ---
+--- Time taken for epoch: 314.33 seconds ---
+  Epoch [166/200], Batch [100/517], Loss: 0.1433
+  Epoch [166/200], Batch [200/517], Loss: 0.2054
+  Epoch [166/200], Batch [300/517], Loss: 0.1135
+  Epoch [166/200], Batch [400/517], Loss: 0.1535
+  Epoch [166/200], Batch [500/517], Loss: 0.1382
+--- Epoch [166/200] complete. Average Training Loss: 0.1618 ---
+--- Time taken for epoch: 314.42 seconds ---
+  Epoch [167/200], Batch [100/517], Loss: 0.1677
+  Epoch [167/200], Batch [200/517], Loss: 0.1578
+  Epoch [167/200], Batch [300/517], Loss: 0.2437
+  Epoch [167/200], Batch [400/517], Loss: 0.1259
+  Epoch [167/200], Batch [500/517], Loss: 0.2392
+--- Epoch [167/200] complete. Average Training Loss: 0.1624 ---
+--- Time taken for epoch: 314.54 seconds ---
+  Epoch [168/200], Batch [100/517], Loss: 0.1736
+  Epoch [168/200], Batch [200/517], Loss: 0.1586
+  Epoch [168/200], Batch [300/517], Loss: 0.1150
+  Epoch [168/200], Batch [400/517], Loss: 0.1027
+  Epoch [168/200], Batch [500/517], Loss: 0.1743
+--- Epoch [168/200] complete. Average Training Loss: 0.1605 ---
+--- Time taken for epoch: 314.48 seconds ---
+  Epoch [169/200], Batch [100/517], Loss: 0.1406
+  Epoch [169/200], Batch [200/517], Loss: 0.2823
+  Epoch [169/200], Batch [300/517], Loss: 0.1856
+  Epoch [169/200], Batch [400/517], Loss: 0.1198
+  Epoch [169/200], Batch [500/517], Loss: 0.2592
+--- Epoch [169/200] complete. Average Training Loss: 0.1614 ---
+--- Time taken for epoch: 314.67 seconds ---
+  Epoch [170/200], Batch [100/517], Loss: 0.1264
+  Epoch [170/200], Batch [200/517], Loss: 0.1205
+  Epoch [170/200], Batch [300/517], Loss: 0.2143
+  Epoch [170/200], Batch [400/517], Loss: 0.1775
+  Epoch [170/200], Batch [500/517], Loss: 0.1530
+--- Epoch [170/200] complete. Average Training Loss: 0.1640 ---
+--- Time taken for epoch: 314.82 seconds ---
+  Epoch [171/200], Batch [100/517], Loss: 0.1160
+  Epoch [171/200], Batch [200/517], Loss: 0.2496
+  Epoch [171/200], Batch [300/517], Loss: 0.1536
+  Epoch [171/200], Batch [400/517], Loss: 0.1425
+  Epoch [171/200], Batch [500/517], Loss: 0.1308
+--- Epoch [171/200] complete. Average Training Loss: 0.1614 ---
+--- Time taken for epoch: 314.74 seconds ---
+  Epoch [172/200], Batch [100/517], Loss: 0.1163
+  Epoch [172/200], Batch [200/517], Loss: 0.1714
+  Epoch [172/200], Batch [300/517], Loss: 0.1651
+  Epoch [172/200], Batch [400/517], Loss: 0.1242
+  Epoch [172/200], Batch [500/517], Loss: 0.1275
+--- Epoch [172/200] complete. Average Training Loss: 0.1579 ---
+--- Time taken for epoch: 314.85 seconds ---
+  Epoch [173/200], Batch [100/517], Loss: 0.1796
+  Epoch [173/200], Batch [200/517], Loss: 0.1099
+  Epoch [173/200], Batch [300/517], Loss: 0.1647
+  Epoch [173/200], Batch [400/517], Loss: 0.1792
+  Epoch [173/200], Batch [500/517], Loss: 0.1492
+--- Epoch [173/200] complete. Average Training Loss: 0.1596 ---
+--- Time taken for epoch: 314.76 seconds ---
+  Epoch [174/200], Batch [100/517], Loss: 0.1651
+  Epoch [174/200], Batch [200/517], Loss: 0.2143
+  Epoch [174/200], Batch [300/517], Loss: 0.1124
+  Epoch [174/200], Batch [400/517], Loss: 0.1245
+  Epoch [174/200], Batch [500/517], Loss: 0.1923
+--- Epoch [174/200] complete. Average Training Loss: 0.1630 ---
+--- Time taken for epoch: 314.55 seconds ---
+  Epoch [175/200], Batch [100/517], Loss: 0.1046
+  Epoch [175/200], Batch [200/517], Loss: 0.1673
+  Epoch [175/200], Batch [300/517], Loss: 0.1206
+  Epoch [175/200], Batch [400/517], Loss: 0.1330
+  Epoch [175/200], Batch [500/517], Loss: 0.2440
+--- Epoch [175/200] complete. Average Training Loss: 0.1642 ---
+--- Time taken for epoch: 314.59 seconds ---
+ -- Updated Checkpoint: Saved model at 175 epochs.
+  Epoch [176/200], Batch [100/517], Loss: 0.1438
+  Epoch [176/200], Batch [200/517], Loss: 0.1273
+  Epoch [176/200], Batch [300/517], Loss: 0.1497
+  Epoch [176/200], Batch [400/517], Loss: 0.1431
+  Epoch [176/200], Batch [500/517], Loss: 0.1771
+--- Epoch [176/200] complete. Average Training Loss: 0.1588 ---
+--- Time taken for epoch: 314.28 seconds ---
+  Epoch [177/200], Batch [100/517], Loss: 0.1519
+  Epoch [177/200], Batch [200/517], Loss: 0.1436
+  Epoch [177/200], Batch [300/517], Loss: 0.2472
+  Epoch [177/200], Batch [400/517], Loss: 0.1349
+  Epoch [177/200], Batch [500/517], Loss: 0.1206
+--- Epoch [177/200] complete. Average Training Loss: 0.1580 ---
+--- Time taken for epoch: 314.62 seconds ---
+  Epoch [178/200], Batch [100/517], Loss: 0.1699
+  Epoch [178/200], Batch [200/517], Loss: 0.1445
+  Epoch [178/200], Batch [300/517], Loss: 0.2179
+  Epoch [178/200], Batch [400/517], Loss: 0.3503
+  Epoch [178/200], Batch [500/517], Loss: 0.1395
+--- Epoch [178/200] complete. Average Training Loss: 0.1559 ---
+--- Time taken for epoch: 314.89 seconds ---
+  Epoch [179/200], Batch [100/517], Loss: 0.1140
+  Epoch [179/200], Batch [200/517], Loss: 0.1454
+  Epoch [179/200], Batch [300/517], Loss: 0.1186
+  Epoch [179/200], Batch [400/517], Loss: 0.1260
+  Epoch [179/200], Batch [500/517], Loss: 0.0825
+--- Epoch [179/200] complete. Average Training Loss: 0.1604 ---
+--- Time taken for epoch: 314.85 seconds ---
+  Epoch [180/200], Batch [100/517], Loss: 0.2483
+  Epoch [180/200], Batch [200/517], Loss: 0.1739
+  Epoch [180/200], Batch [300/517], Loss: 0.1262
+  Epoch [180/200], Batch [400/517], Loss: 0.1265
+  Epoch [180/200], Batch [500/517], Loss: 0.1709
+--- Epoch [180/200] complete. Average Training Loss: 0.1554 ---
+--- Time taken for epoch: 314.84 seconds ---
+  Epoch [181/200], Batch [100/517], Loss: 0.1405
+  Epoch [181/200], Batch [200/517], Loss: 0.1671
+  Epoch [181/200], Batch [300/517], Loss: 0.1289
+  Epoch [181/200], Batch [400/517], Loss: 0.1226
+  Epoch [181/200], Batch [500/517], Loss: 0.1525
+--- Epoch [181/200] complete. Average Training Loss: 0.1546 ---
+--- Time taken for epoch: 314.91 seconds ---
+  Epoch [182/200], Batch [100/517], Loss: 0.1657
+  Epoch [182/200], Batch [200/517], Loss: 0.1874
+  Epoch [182/200], Batch [300/517], Loss: 0.1212
+  Epoch [182/200], Batch [400/517], Loss: 0.1837
+  Epoch [182/200], Batch [500/517], Loss: 0.1714
+--- Epoch [182/200] complete. Average Training Loss: 0.1678 ---
+--- Time taken for epoch: 314.33 seconds ---
+  Epoch [183/200], Batch [100/517], Loss: 0.1637
+  Epoch [183/200], Batch [200/517], Loss: 0.1040
+  Epoch [183/200], Batch [300/517], Loss: 0.1181
+  Epoch [183/200], Batch [400/517], Loss: 0.1679
+  Epoch [183/200], Batch [500/517], Loss: 0.1034
+--- Epoch [183/200] complete. Average Training Loss: 0.1579 ---
+--- Time taken for epoch: 314.42 seconds ---
+  Epoch [184/200], Batch [100/517], Loss: 0.1702
+  Epoch [184/200], Batch [200/517], Loss: 0.1184
+  Epoch [184/200], Batch [300/517], Loss: 0.1938
+  Epoch [184/200], Batch [400/517], Loss: 0.1501
+  Epoch [184/200], Batch [500/517], Loss: 0.0918
+--- Epoch [184/200] complete. Average Training Loss: 0.1571 ---
+--- Time taken for epoch: 314.55 seconds ---
+  Epoch [185/200], Batch [100/517], Loss: 0.2225
+  Epoch [185/200], Batch [200/517], Loss: 0.1063
+  Epoch [185/200], Batch [300/517], Loss: 0.2054
+  Epoch [185/200], Batch [400/517], Loss: 0.2460
+  Epoch [185/200], Batch [500/517], Loss: 0.1549
+--- Epoch [185/200] complete. Average Training Loss: 0.1545 ---
+--- Time taken for epoch: 314.53 seconds ---
+  Epoch [186/200], Batch [100/517], Loss: 0.1095
+  Epoch [186/200], Batch [200/517], Loss: 0.1454
+  Epoch [186/200], Batch [300/517], Loss: 0.1287
+  Epoch [186/200], Batch [400/517], Loss: 0.1890
+  Epoch [186/200], Batch [500/517], Loss: 0.1173
+--- Epoch [186/200] complete. Average Training Loss: 0.1535 ---
+--- Time taken for epoch: 314.66 seconds ---
+  Epoch [187/200], Batch [100/517], Loss: 0.1369
+  Epoch [187/200], Batch [200/517], Loss: 0.1454
+  Epoch [187/200], Batch [300/517], Loss: 0.1791
+  Epoch [187/200], Batch [400/517], Loss: 0.0989
+  Epoch [187/200], Batch [500/517], Loss: 0.1327
+--- Epoch [187/200] complete. Average Training Loss: 0.1529 ---
+--- Time taken for epoch: 314.64 seconds ---
+  Epoch [188/200], Batch [100/517], Loss: 0.1450
+  Epoch [188/200], Batch [200/517], Loss: 0.1060
+  Epoch [188/200], Batch [300/517], Loss: 0.1407
+  Epoch [188/200], Batch [400/517], Loss: 0.2003
+  Epoch [188/200], Batch [500/517], Loss: 0.1338
+--- Epoch [188/200] complete. Average Training Loss: 0.1527 ---
+--- Time taken for epoch: 314.79 seconds ---
+  Epoch [189/200], Batch [100/517], Loss: 0.1635
+  Epoch [189/200], Batch [200/517], Loss: 0.1501
+  Epoch [189/200], Batch [300/517], Loss: 0.2730
+  Epoch [189/200], Batch [400/517], Loss: 0.1532
+  Epoch [189/200], Batch [500/517], Loss: 0.1391
+--- Epoch [189/200] complete. Average Training Loss: 0.1568 ---
+--- Time taken for epoch: 314.71 seconds ---
+  Epoch [190/200], Batch [100/517], Loss: 0.1040
+  Epoch [190/200], Batch [200/517], Loss: 0.1373
+  Epoch [190/200], Batch [300/517], Loss: 0.2276
+  Epoch [190/200], Batch [400/517], Loss: 0.1632
+  Epoch [190/200], Batch [500/517], Loss: 0.1896
+--- Epoch [190/200] complete. Average Training Loss: 0.1609 ---
+--- Time taken for epoch: 314.72 seconds ---
+  Epoch [191/200], Batch [100/517], Loss: 0.1095
+  Epoch [191/200], Batch [200/517], Loss: 0.1875
+  Epoch [191/200], Batch [300/517], Loss: 0.1065
+  Epoch [191/200], Batch [400/517], Loss: 0.1395
+  Epoch [191/200], Batch [500/517], Loss: 0.1248
+--- Epoch [191/200] complete. Average Training Loss: 0.1547 ---
+--- Time taken for epoch: 314.29 seconds ---
+  Epoch [192/200], Batch [100/517], Loss: 0.1524
+  Epoch [192/200], Batch [200/517], Loss: 0.0960
+  Epoch [192/200], Batch [300/517], Loss: 0.1406
+  Epoch [192/200], Batch [400/517], Loss: 0.1670
+  Epoch [192/200], Batch [500/517], Loss: 0.1448
+--- Epoch [192/200] complete. Average Training Loss: 0.1528 ---
+--- Time taken for epoch: 314.91 seconds ---
+  Epoch [193/200], Batch [100/517], Loss: 0.1405
+  Epoch [193/200], Batch [200/517], Loss: 0.1599
+  Epoch [193/200], Batch [300/517], Loss: 0.0989
+  Epoch [193/200], Batch [400/517], Loss: 0.1161
+  Epoch [193/200], Batch [500/517], Loss: 0.1135
+--- Epoch [193/200] complete. Average Training Loss: 0.1520 ---
+--- Time taken for epoch: 314.66 seconds ---
+  Epoch [194/200], Batch [100/517], Loss: 0.1198
+  Epoch [194/200], Batch [200/517], Loss: 0.1402
+  Epoch [194/200], Batch [300/517], Loss: 0.1503
+  Epoch [194/200], Batch [400/517], Loss: 0.1509
+  Epoch [194/200], Batch [500/517], Loss: 0.1498
+--- Epoch [194/200] complete. Average Training Loss: 0.1562 ---
+--- Time taken for epoch: 314.77 seconds ---
+  Epoch [195/200], Batch [100/517], Loss: 0.1930
+  Epoch [195/200], Batch [200/517], Loss: 0.1900
+  Epoch [195/200], Batch [300/517], Loss: 0.1638
+  Epoch [195/200], Batch [400/517], Loss: 0.1264
+  Epoch [195/200], Batch [500/517], Loss: 0.2118
+--- Epoch [195/200] complete. Average Training Loss: 0.1540 ---
+--- Time taken for epoch: 314.68 seconds ---
+  Epoch [196/200], Batch [100/517], Loss: 0.1040
+  Epoch [196/200], Batch [200/517], Loss: 0.2220
+  Epoch [196/200], Batch [300/517], Loss: 0.1053
+  Epoch [196/200], Batch [400/517], Loss: 0.1206
+  Epoch [196/200], Batch [500/517], Loss: 0.3037
+--- Epoch [196/200] complete. Average Training Loss: 0.1538 ---
+--- Time taken for epoch: 314.80 seconds ---
+  Epoch [197/200], Batch [100/517], Loss: 0.1604
+  Epoch [197/200], Batch [200/517], Loss: 0.0841
+  Epoch [197/200], Batch [300/517], Loss: 0.0837
+  Epoch [197/200], Batch [400/517], Loss: 0.1509
+  Epoch [197/200], Batch [500/517], Loss: 0.1988
+--- Epoch [197/200] complete. Average Training Loss: 0.1520 ---
+--- Time taken for epoch: 314.60 seconds ---
+  Epoch [198/200], Batch [100/517], Loss: 0.1406
+  Epoch [198/200], Batch [200/517], Loss: 0.1546
+  Epoch [198/200], Batch [300/517], Loss: 0.1341
+  Epoch [198/200], Batch [400/517], Loss: 0.3329
+  Epoch [198/200], Batch [500/517], Loss: 0.1813
+--- Epoch [198/200] complete. Average Training Loss: 0.1545 ---
+--- Time taken for epoch: 314.08 seconds ---
+  Epoch [199/200], Batch [100/517], Loss: 0.1441
+  Epoch [199/200], Batch [200/517], Loss: 0.1129
+  Epoch [199/200], Batch [300/517], Loss: 0.0914
+  Epoch [199/200], Batch [400/517], Loss: 0.1450
+  Epoch [199/200], Batch [500/517], Loss: 0.1246
+--- Epoch [199/200] complete. Average Training Loss: 0.1537 ---
+--- Time taken for epoch: 314.55 seconds ---
+  Epoch [200/200], Batch [100/517], Loss: 0.1270
+  Epoch [200/200], Batch [200/517], Loss: 0.2996
+  Epoch [200/200], Batch [300/517], Loss: 0.1259
+  Epoch [200/200], Batch [400/517], Loss: 0.1238
+  Epoch [200/200], Batch [500/517], Loss: 0.1249
+--- Epoch [200/200] complete. Average Training Loss: 0.1662 ---
+--- Time taken for epoch: 314.56 seconds ---
+ -- Updated Checkpoint: Saved model at 200 epochs.
+UNet training finished.
+UNet training process completed.
+
+Starting UNet Testing...
