@@ -6,13 +6,13 @@ import numpy as np
 ################## READ FILE NAMES ##################
 
 # input and output directories
-output_dir = "./data/cv"
-input_dir = "./data/raw/05m_chips/labels"
+output_dir = "./data"
+input_dir = "./data/05m_chips/labels"
 file_names = [f for f in os.listdir(input_dir) if f.endswith(".tif")] # change to file extension you want
 
 # setup
-R = 2 # number of repetitions
-k = 5 # number of folds
+R = 3 # number of repetitions
+k = 10 # number of folds
 
 ################## SPLIT TRAIN/VAL/TEST ##################
 
@@ -39,7 +39,7 @@ for r in range(1, R + 1):
         train_files = [file_names[j] for j in train_indices]
         test_files = [file_names[j] for j in test_indices]
 
-        folder = f"{output_dir}/r{R}_k{k}/r{r}/k{i+1}"
+        folder = f"{output_dir}/CV_R{R}_k{k}_fold/R{r}/k{i+1}"
         os.makedirs(folder, exist_ok=True)
         train_file_path = os.path.join(folder, f"train.dat")
         test_file_path = os.path.join(folder, f"test.dat")

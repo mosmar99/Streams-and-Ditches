@@ -1,39 +1,32 @@
 import os
+import sys
 import math
 import torch
 import numpy as np
 import torch.nn as nn
 from PIL import Image
-from unet import UNet, UNetDataset
+from fresh.models.unet import UNet
+from mapio.unet import UNetDataset
 from torch.utils.data import DataLoader
-import graph_processing
+import mapio.graph_processing as graph_processing
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA, IncrementalPCA
+import umap
+from sklearn.preprocessing import MinMaxScaler
+import tifffile
 import time
 import tqdm
+import pickle as pk
+import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
+
+from skimage.filters import sobel, meijering, sato, frangi, hessian, gaussian, threshold_sauvola
 
 def read_file_list(file_path):
     with open(file_path, 'r') as f:
         return [line.strip() for line in f.readlines()]
 
-def reduce_features_pca(x, n_components=64):
-    """
-    x: np.ndarray of shape [B, C, H, W]
-    returns: np.ndarray of shape [B, n_components, H, W]
-    """
-    B, C, H, W = x.shape
-    x_reshaped = np.transpose(x, (0, 2, 3, 1)).reshape(B, H*W, C)
-    compressed_list = []
-    for b in range(B):
-        pca = PCA(n_components=n_components)
-        compressed = pca.fit_transform(x_reshaped[b])
-        compressed_list.append(compressed)
-    compressed_stacked = np.stack(compressed_list)
-    compressed_output = compressed_stacked.reshape(B, H, W, n_components)
-    compressed_output = np.transpose(compressed_output, (0, 3, 1, 2))
-    return compressed_output
-
-def fit_pca(train_loader, best_model_path, n_components=64):
+def fit_pca(train_loader, best_model_path, save_dir, n_components=4):
     test_model = UNet().to(device)
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
@@ -42,10 +35,15 @@ def fit_pca(train_loader, best_model_path, n_components=64):
     def get_features(name):
         def hook(model, input, output):
             intermediate[name] = output.detach().cpu().numpy()
-        return hook 
+        return hook
+    
     test_model.down_conv5[-1].register_forward_hook(get_features("x9"))
+    test_model.down_conv4[-1].register_forward_hook(get_features("x7"))
+    test_model.up_conv_1[-1].register_forward_hook(get_features("u7"))
 
-    pca = IncrementalPCA(n_components=n_components)
+    pca_x9 = IncrementalPCA(n_components=n_components)
+    pca_x7 = IncrementalPCA(n_components=n_components)
+    pca_u7 = IncrementalPCA(n_components=n_components)
 
     for i, (batch_images, *_) in tqdm.tqdm(enumerate(train_loader)):
         # images, padding = test_model.add_padding(batch_images)
@@ -54,14 +52,26 @@ def fit_pca(train_loader, best_model_path, n_components=64):
         # make predictions
         with torch.no_grad():
             _ = test_model.predict_softmax(batch_images)
-            feats = intermediate["x9"]  # [B, C, H, W]
+            feats_x9 = intermediate["x9"]  # [B, C, H, W]
+            feats_x7 = intermediate["x7"]  # [B, C, H, W]
+            feats_u7 = intermediate["u7"]  # [B, C, H, W]
     
-        B, C, H, W = feats.shape
-        feats_reshaped = np.transpose(feats, (0, 2, 3, 1)).reshape(B * H * W, C)  # [B*H*W, C]
-        
-        pca.partial_fit(feats_reshaped)
+        Bx9, Cx9, Hx9, Wx9 = feats_x9.shape
+        Bx7, Cx7, Hx7, Wx7 = feats_x7.shape
+        Bu7, Cu7, Hu7, Wu7 = feats_u7.shape
+        feats_reshaped_x9 = np.transpose(feats_x9, (0, 2, 3, 1)).reshape(-1, Cx9)  # [B*H*W, C]
+        feats_reshaped_x7 = np.transpose(feats_x7, (0, 2, 3, 1)).reshape(-1, Cx7)  # [B*H*W, C]
+        feats_reshaped_u7 = np.transpose(feats_u7, (0, 2, 3, 1)).reshape(-1, Cu7)  # [B*H*W, C]
+
+        pca_x9.partial_fit(feats_reshaped_x9)
+        pca_x7.partial_fit(feats_reshaped_x7)
+        pca_u7.partial_fit(feats_reshaped_u7)
     
-    return pca
+    pk.dump(pca_x9, open(os.path.join(save_dir, "pca_x9.pkl"), "wb"))
+    pk.dump(pca_x7, open(os.path.join(save_dir, "pca_x7.pkl"), "wb"))
+    pk.dump(pca_u7, open(os.path.join(save_dir, "pca_u7.pkl"), "wb"))
+
+    return pca_x9, pca_x7, pca_u7
 
 def apply_pca_transform(pca, features):
     B, C, H, W = features.shape
@@ -74,22 +84,34 @@ def apply_pca_transform(pca, features):
 
     return transformed
 
+def save_graph_data(j, img_file_name, nodes, connections, node_mask, 
+                    argmax_pred_cpu, graph_dir):
+    if nodes.shape[0] == 0:
+        return  
+    np.savez_compressed(os.path.join(graph_dir, f"{img_file_name[j]}.npz"), 
+                        nodes=nodes, edges=connections, image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
 
-def main(logdir, epochs=42, batch_size=42):
-    # read file names   
-    train_fnames_path = './data/mapio_folds/f1/train_files.dat'
+def main(logdir, device, fold, batch_size=8):
+    train_fnames_path = f'./data/05m_folds/{fold}/train.dat'
+    test_fnames_path = f'./data/05m_folds/{fold}/test.dat'
+    valid_fnames_path = f'./data/05m_folds/{fold}/valid.dat'
+
     train_files = read_file_list(train_fnames_path)
+    test_files = read_file_list(test_fnames_path)
+    valid_files = read_file_list(valid_fnames_path)
+
+    all_files = train_files + test_files + valid_files
 
     image_folder = './data/05m_chips/slope/'
     label_folder = './data/05m_chips/labels/'
 
-    train_dataset = UNetDataset(train_files, image_folder, label_folder)
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=15, pin_memory=True)
+    train_dataset = UNetDataset(all_files, image_folder, label_folder)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, num_workers=8, pin_memory=True)
 
     # 20250513_161035
     # instantiate the model
     test_model = UNet().to(device)
-    best_model_path = 'logs/unet_model_ckpt1.pth'
+    best_model_path = os.path.join(logdir, fold, 'unet/checkpoints/unet_model_epoch100.pth')
     test_model.load_state_dict(torch.load(best_model_path, map_location=device))
     test_model.eval()
 
@@ -100,71 +122,83 @@ def main(logdir, epochs=42, batch_size=42):
         return hook
         
     test_model.down_conv5[-1].register_forward_hook(get_features("x9"))
+    test_model.down_conv4[-1].register_forward_hook(get_features("x7"))
+    test_model.up_conv_1[-1].register_forward_hook(get_features("u7"))
 
-    # create a directory to save the predictions
-    # pred_dir = os.path.join(logdir, 'predictions')
-    graph_dir = os.path.join(logdir, 'graphs')
-    node_mask_dir = os.path.join(logdir, 'reconstruction')
-    # os.makedirs(pred_dir, exist_ok=True)
+    graph_dir = os.path.join(logdir, fold, 'graphs')
     os.makedirs(graph_dir, exist_ok=True)
-    os.makedirs(node_mask_dir, exist_ok=True)
+    graph_utils_dir = os.path.join(logdir, fold, 'graph_utils')
+    os.makedirs(graph_utils_dir, exist_ok=True)
 
-    # pca = fit_pca(train_loader, best_model_path, n_components=4)
+    # pca_x9, pca_x7, pca_u7 = fit_pca(train_loader, best_model_path, graph_utils_dir, n_components=4)
+
+    pca_x9 = pk.load(open(os.path.join(graph_utils_dir,"pca_x9.pkl"),'rb'))
+    pca_x7 = pk.load(open(os.path.join(graph_utils_dir,"pca_x7.pkl"),'rb'))
+    pca_u7 = pk.load(open(os.path.join(graph_utils_dir,"pca_u7.pkl"),'rb'))
+
+    scaler = MinMaxScaler()
 
     # iterate over the train dataset
     print('Iterating over the train dataset...')
-    for i, (batch_images, batch_labels, img_file_name) in tqdm.tqdm(enumerate(train_loader)):
-        # images, padding = test_model.add_padding(batch_images)
-        batch_images = batch_images.to(device)
-        labels = batch_labels.squeeze(1).long().to(device)
+    with multiprocessing.Pool(processes=8) as pool, ThreadPoolExecutor(max_workers=16) as executor:
+        for batch_images, batch_labels, img_file_name in tqdm.tqdm(train_loader):
+            if "18E023_68950_6275_25_0048" not in img_file_name:
+                continue
+            print(img_file_name)
+            # images, padding = test_model.add_padding(batch_images)
+            batch_images = batch_images.to(device)
+            labels = batch_labels.squeeze(1).long().to(device)
 
-        # make predictions
-        with torch.no_grad():
-            pred = test_model.predict_softmax(batch_images)
-            argmax_pred = torch.argmax(pred, dim=1)
+            # make predictions
+            with torch.no_grad():
+                pred = test_model.predict_softmax(batch_images)
+                argmax_pred = torch.argmax(pred, dim=1)
 
-        pred_cpu = pred.cpu().numpy()
-        argmax_pred_cpu = argmax_pred.cpu().numpy()
-        labes_cpu = labels.cpu().numpy()
-        # deep_pca = apply_pca_transform(pca, intermediate["x9"])
-        graphs = [graph_processing.image_to_graph(argmax_pred_cpu[i], pred_cpu[i], labes_cpu[i], intermediate["x9"][i]) for i in range(pred_cpu.shape[0])]
+            pred_cpu = pred.cpu().numpy()
+            argmax_pred_cpu = argmax_pred.cpu().numpy()
+            labes_cpu = labels.cpu().numpy()
+            batch_images_cpu = batch_images.cpu().numpy()
 
-        for j, (nodes, connections, node_mask) in enumerate(graphs):
-            # print(nodes[:,:2].shape)
-            # plt.figure(figsize=(8, 6))
-            # plt.imshow(argmax_pred_cpu[j], vmin=0, vmax=2)
+            deep_x9 = apply_pca_transform(pca_x9, intermediate["x9"])
+            deep_x7 = apply_pca_transform(pca_x7, intermediate["x7"])
+            deep_u7 = apply_pca_transform(pca_u7, intermediate["u7"])
 
-            # color_map = {0:"#ffffff",
-            #           1:"#00BFFF",
-            #           2:"#32CD32"}
-            
-            # colors = [color_map[i] for i in nodes[:,-1]]
+            flow_acc = np.array([tifffile.imread(os.path.join("./data/05m_chips/flow_acc", f"{image}.tif")) for image in img_file_name])
+            twi = np.array([tifffile.imread(os.path.join("./data/05m_chips/twi", f"{image}.tif")) for image in img_file_name])
+            elevation = np.array([tifffile.imread(os.path.join("./data/05m_chips/elevation", f"{image}.tif")) for image in img_file_name])
 
-            # plt.scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
-            # graph_processing.plot_graph_edges(plt, nodes[:,:3], connections)
-            # plt.show()
+            [graph_processing.image_to_graph(argmax_pred_cpu[i],
+                                            pred_cpu[i],
+                                            labes_cpu[i],
+                                            deep_x9[i],
+                                            deep_x7[i],
+                                            deep_u7[i],
+                                            batch_images_cpu[i],
+                                            flow_acc[i],
+                                            twi[i],
+                                            elevation[i]) for i in range(pred_cpu.shape[0])]# if img_file_name[i] == "18E023_68950_6275_25_0048"]
 
-            # fig, ax = plt.subplots(1,2,figsize=(8, 6))
-            # ax[0].imshow(argmax_pred_cpu[j], vmin=0, vmax=2)
-            # graph_processing.plot_graph_edges(ax[0], nodes[:,:3], connections)
-            # ax[0].scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
+            graphs = pool.starmap(graph_processing.image_to_graph, [
+                (argmax_pred_cpu[i],
+                pred_cpu[i],
+                labes_cpu[i],
+                deep_x9[i],
+                deep_x7[i],
+                deep_u7[i],
+                batch_images_cpu[i],
+                flow_acc[i],
+                twi[i],
+                elevation[i])
+                for i in range(pred_cpu.shape[0])
+            ])
 
-            # ax[1].imshow(labes_cpu[j], vmin=0, vmax=2)
-            # graph_processing.plot_graph_edges(ax[1], nodes[:,:3], connections)
-            # ax[1].scatter(nodes[:,2], nodes[:,1], c=colors, s=3)
-            # plt.show()
+            _ = [scaler.partial_fit(nodes) for nodes, _, _ in graphs if nodes.shape[0] > 0]
 
-            deep_fmt = ('%.7f',)*512
-            node_fmt = ('%d', '%d', '%d', '%.7f', '%.7f', '%.7f', *deep_fmt, '%d')
-            if nodes.shape[0] != 0:
-                np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.nodes"), nodes, delimiter=",", fmt=node_fmt)
-                np.savetxt(os.path.join(graph_dir, f"{i * batch_size + j}.edges"), connections, delimiter=",", fmt='%d')    
-                np.savez_compressed(os.path.join(node_mask_dir, f"{i * batch_size + j}.npz"), image=node_mask, unet_pred=argmax_pred_cpu[j], image_name=img_file_name[j])
-        # save the predictions
-        # for j in range(pred.shape[0]):
-        #     pred_image = pred[j].cpu().numpy().astype('uint8')
-        #     pred_pil = Image.fromarray(pred_image, mode='L')
-        #     pred_pil.save(os.path.join(pred_dir, f'pred_{i * batch_size + j}.png'))
+            for j, (nodes, connections, node_mask) in enumerate(graphs):
+                executor.submit(save_graph_data, j, img_file_name, nodes, connections,
+                                node_mask, argmax_pred_cpu, graph_dir)
+
+    pk.dump(scaler, open(os.path.join(graph_utils_dir, "nodes_scaler.pkl"), "wb"))
 
 if __name__ == '__main__':
     import time
@@ -175,12 +209,13 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # get the arguments
-    parser = argparse.ArgumentParser(description='UNet Training')
-    parser.add_argument('--logdir', type=str, default='logs', help='Directory to save logs')
-    args = parser.parse_args()
-    logdir = args.logdir
+    pipiline_parser = argparse.ArgumentParser(description='Create graphs')
+    pipiline_parser.add_argument('--fold', type=str, default='tf1', help='What fold to use')
+    args = pipiline_parser.parse_args()
+    fold = args.fold
+    logdir = './logs/UNETCV'
 
-    main(logdir, epochs=100, batch_size=8)
+    main(logdir, device, fold, batch_size=8)
     
     end_time = time.time()
     print('Total time taken: {:.2f} min'.format((end_time - begin_time) / 60))

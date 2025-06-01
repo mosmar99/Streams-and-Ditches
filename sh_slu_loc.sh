@@ -3,7 +3,11 @@
 # Create a main log directory if it doesn't exist
 MODEL="m1"
 MAIN_LOG_DIR="logs/${MODEL}"
+<<<<<<< HEAD
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+=======
+TIMESTAMP=$(date +%Y%m%d_%H%M)
+>>>>>>> graph_build
 mkdir -p "$MAIN_LOG_DIR"
 
 # Create a subdirectory for this job's logs
@@ -17,7 +21,11 @@ echo "started task with timestamp :: ${TIMESTAMP}"
 
 # Run your python script and redirect output to a file within the job's log directory
 START=$(date +%s)
+<<<<<<< HEAD
 python mapio/unet.py --logdir "$JOB_LOG_DIR" > "${JOB_LOG_DIR}/output_${TIMESTAMP}.txt"
+=======
+python main.py "$JOB_LOG_DIR" --epochs 1 > "${JOB_LOG_DIR}/output_${TIMESTAMP}.txt"
+>>>>>>> graph_build
 END=$(date +%s)
 RUNTIME=$((END - START))
 
