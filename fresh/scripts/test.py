@@ -4,13 +4,14 @@ import torch
 import numpy as np
 import torchvision.transforms.functional as TF
 from datetime import datetime
-from models.unet import add_padding, remove_padding
-from utils.metrics import (
-    calculate_tp_fp_fn_per_class,
+from fresh.models.unet import add_padding, remove_padding
+from fresh.utils.metrics import (
+    calculate_tp_fp_fn_tn_per_class,
     calculate_precision_recall_per_class,
     calculate_iou_per_class,
     calculate_dice_per_class,
-    calculate_overall_pixel_accuracy
+    calculate_overall_pixel_accuracy,
+    calculate_mcc_per_class
 )
 
 def test_unet(model, test_loader, criterion, device, num_classes, checkpoint_path=None, 
@@ -106,11 +107,12 @@ def test_unet(model, test_loader, criterion, device, num_classes, checkpoint_pat
     all_true_masks_tensor_flat = torch.cat(all_true_masks_flat, dim=0)
 
     # Calculate metrics
-    tps, fps, fns = calculate_tp_fp_fn_per_class(all_pred_masks_tensor_flat, all_true_masks_tensor_flat, num_classes)
+    tps, fps, fns, tns = calculate_tp_fp_fn_tn_per_class(all_pred_masks_tensor_flat, all_true_masks_tensor_flat, num_classes)
     precisions, recalls = calculate_precision_recall_per_class(tps, fps, fns)
     ious = calculate_iou_per_class(tps, fps, fns)
     dices = calculate_dice_per_class(tps, fps, fns)
     pixel_acc = calculate_overall_pixel_accuracy(all_pred_masks_tensor_flat, all_true_masks_tensor_flat)
+    mccs = calculate_mcc_per_class(tps, fps, fns, tns)
 
     mean_iou = np.mean(ious)
     mean_dice = np.mean(dices)
@@ -133,12 +135,12 @@ def test_unet(model, test_loader, criterion, device, num_classes, checkpoint_pat
         f.write(f"Mean Precision: {mean_precision:.6f}\n")
         f.write(f"Mean Recall: {mean_recall:.6f}\n")
         f.write("\n--- Per-Class Metrics ---\n")
-        header = "Class | Precision | Recall    | IoU       | Dice\n"
+        header = "Class | Precision | Recall    | IoU       | Dice      | MCC       \n"
         f.write(header)
         print("\n--- Per-Class Metrics ---")
         print(header.strip())
         for c in range(num_classes):
-            class_metrics_str = f"{c:<5} | {precisions[c]:<9.4f} | {recalls[c]:<9.4f} | {ious[c]:<9.4f} | {dices[c]:<9.4f}\n"
+            class_metrics_str = f"{c:<5} | {precisions[c]:<9.4f} | {recalls[c]:<9.4f} | {ious[c]:<9.4f} | {dices[c]:<9.4f} | {mccs[c]:<9.4f}\n"
             f.write(class_metrics_str)
             print(class_metrics_str.strip())
         f.flush()

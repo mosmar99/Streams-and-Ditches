@@ -1,6 +1,7 @@
 import torch
+import math
 
-def calculate_tp_fp_fn_per_class(preds_flat, targets_flat, num_classes):
+def calculate_tp_fp_fn_tn_per_class(preds_flat, targets_flat, num_classes):
     """
     Calculates True Positives, False Positives, and False Negatives per class.
 
@@ -18,6 +19,7 @@ def calculate_tp_fp_fn_per_class(preds_flat, targets_flat, num_classes):
     tps = []
     fps = []
     fns = []
+    tns = []
 
     for c in range(num_classes):
         true_class_c = (targets_flat == c)
@@ -26,12 +28,14 @@ def calculate_tp_fp_fn_per_class(preds_flat, targets_flat, num_classes):
         tp = (pred_class_c & true_class_c).sum().item()
         fp = (pred_class_c & ~true_class_c).sum().item()
         fn = (~pred_class_c & true_class_c).sum().item()
+        tn = (~pred_class_c & ~true_class_c).sum().item()
         
         tps.append(tp)
         fps.append(fp)
         fns.append(fn)
+        tns.append(tn)
         
-    return tps, fps, fns
+    return tps, fps, fns, tns
 
 def calculate_precision_recall_per_class(tps, fps, fns, epsilon=1e-7):
     """
@@ -122,3 +126,56 @@ def calculate_overall_pixel_accuracy(preds_flat, targets_flat, epsilon=1e-7):
     total_pixels = targets_flat.numel()
     accuracy = correct_pixels / (total_pixels + epsilon)
     return accuracy
+
+def calculate_mcc_per_class(tps, fps, fns, tns, epsilon=1e-7):
+    """
+    Calculates Matthews Correlation Coefficient (MCC) per class.
+
+    MCC is a robust metric that considers all four confusion matrix values (TP, TN, FP, FN)
+    and is generally regarded as a balanced measure which can be used even if the classes
+    are of very different sizes.
+
+    Formula: (TP*TN - FP*FN) / sqrt((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))
+
+    Args:
+        tps (list): List of True Positives for each class.
+        fps (list): List of False Positives for each class.
+        fns (list): List of False Negatives for each class.
+        tns (list): List of True Negatives for each class.
+        epsilon (float): Small value to avoid division by zero.
+
+    Returns:
+        list: mccs_per_class - List of MCC scores for each class.
+    """
+    num_classes = len(tps)
+    mccs_per_class = []
+
+    for c in range(num_classes):
+        tp = tps[c]
+        fp = fps[c]
+        fn = fns[c]
+        tn = tns[c]
+
+        numerator = (tp * tn) - (fp * fn)
+        
+        # Denominator terms
+        # Use float for these products to avoid potential overflow before sqrt
+        denom_term1 = float(tp + fp)
+        denom_term2 = float(tp + fn)
+        denom_term3 = float(tn + fp)
+        denom_term4 = float(tn + fn)
+        
+        denominator_product = denom_term1 * denom_term2 * denom_term3 * denom_term4
+
+        # Calculate MCC
+        # If the denominator is zero (due to zero sums in terms), MCC is typically 0.
+        # This occurs when one of the marginals (e.g., actual positives, actual negatives,
+        # predicted positives, predicted negatives) is zero.
+        if denominator_product == 0:
+            mcc_c = 0.0
+        else:
+            mcc_c = numerator / (math.sqrt(denominator_product) + epsilon)
+        
+        mccs_per_class.append(mcc_c)
+        
+    return mccs_per_class
