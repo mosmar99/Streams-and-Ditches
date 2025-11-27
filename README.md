@@ -4,7 +4,7 @@ This project presents a two-stage deep learning pipeline for detecting **ditches
 
 ---
 
-## 🌍 Background & Motivation
+## Background & Motivation
 
 Small water channels,especially narrow ditches and streams, are critically important for forestry, agriculture, hydrology, and environmental protection. However, only a fraction of these features appear in Swedish national maps. High-resolution LiDAR data provides an opportunity to automatically detect them, but the task is challenging due to:
 
@@ -17,7 +17,7 @@ This project builds on earlier UNet-based approaches by adding a graph-based ref
 
 ---
 
-## 🧠 Method Summary
+## Method Summary
 
 ### **1. UNet for Semantic Segmentation**
 - Input: slope-derived DEM tiles (500×500 m areas)  
@@ -41,7 +41,7 @@ This project builds on earlier UNet-based approaches by adding a graph-based ref
 
 ---
 
-## 📊 Key Findings
+## Key Findings
 
 - The GAT provides **slight improvements**, but Bayesian analysis shows these fall within a **Region of Practical Equivalence** (±0.05), meaning the gains are **not practically meaningful**.  
 - Both approaches **outperform older baselines**, but do not surpass uncertainty-aware methods from previous work.  
@@ -52,7 +52,7 @@ These insights align with the overall conclusion: the GAT can refine UNet output
 
 ---
 
-## 📦 Dataset Summary
+## Dataset Summary
 
 - 4,593 slope-derived DEM tiles  
 - Pixel-level labels for background, ditch, and stream classes  
@@ -64,7 +64,7 @@ These insights align with the overall conclusion: the GAT can refine UNet output
 
 ---
 
-## 📐 Evaluation
+## Evaluation
 
 Metrics used:
 
@@ -79,7 +79,7 @@ With a ROPE of ±0.05, the performance difference between UNet and GAT was **not
 
 ---
 
-## 🧩 Conclusions
+## Conclusions
 
 - A two-stage UNet → GAT pipeline is effective but **does not meaningfully outperform** UNet alone.  
 - The refinement step is limited by the quality of UNet predictions, since missing features cannot be recovered graphically.  
@@ -88,7 +88,7 @@ With a ROPE of ±0.05, the performance difference between UNet and GAT was **not
 
 ---
 
-## 🔮 Future Improvements
+## Future Improvements
 
 Potential directions include:
 
@@ -96,5 +96,11 @@ Potential directions include:
 - Incorporating **uncertainty quantification** in the UNet stage  
 - Using additional topographical indices beyond slope  
 - Improving label generation to reduce single-pixel artifacts  
-- Exploring end-to-end hybrid CNN–GNN architectures  
+- Exploring end-to-end hybrid CNN–GNN architectures
+
+---
+
+## Authors
+1. Mahmut Osmanovic
+2. Isac Paulsson 
 
